@@ -1,0 +1,21 @@
+__pycache__/
+*.pyc
+.env
+.env.*
+.DS_Store
+.vscode/
+.idea/
+
+# Local/generated outputs
+reports/*.md
+reports/*.json
+!reports/.gitkeep
+
+# Never commit real data or local traces
+local_data/
+private_data/
+real_traces/
+logs/
+debug/
+*.csv
+*.xlsx
