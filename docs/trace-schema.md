@@ -40,6 +40,9 @@ Recommended fields:
 - `layer`: Destination context layer.
 - `path`: Destination path inside that layer.
 
+When present, `layer` must be one of the supported layers and `path` must be a string.
+`model_provider` is also allowed as a destination sink because it represents flow out of the local context boundary.
+
 ## Example
 
 ```json

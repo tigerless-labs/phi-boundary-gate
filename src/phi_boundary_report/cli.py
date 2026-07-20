@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
 from .policy import load_policy
@@ -16,8 +17,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--json", required=True, type=Path, dest="json_out", help="Path for the JSON report.")
     args = parser.parse_args(argv)
 
-    events = load_trace(args.trace)
-    policy = load_policy(args.policy)
+    try:
+        events = load_trace(args.trace)
+        policy = load_policy(args.policy)
+    except (OSError, ValueError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+
     report = build_report(events, policy, args.trace, args.policy)
 
     write_markdown_report(report, args.out)
