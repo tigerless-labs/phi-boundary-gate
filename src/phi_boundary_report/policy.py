@@ -6,6 +6,8 @@ from typing import Any
 
 import yaml
 
+from .trace import SUPPORTED_LAYERS, supported_layers_text
+
 
 @dataclass(frozen=True)
 class PolicyDecision:
@@ -80,10 +82,11 @@ def load_policy(path: Path) -> Policy:
     if not isinstance(raw_categories, dict) or not raw_categories:
         raise ValueError(f"{path}: policy must define at least one category")
 
-    categories = {
-        str(name): _parse_category_policy(path, str(name), value)
-        for name, value in raw_categories.items()
-    }
+    categories = {}
+    for name, value in raw_categories.items():
+        if not isinstance(name, str) or not name:
+            raise ValueError(f"{path}: category names must be non-empty strings")
+        categories[name] = _parse_category_policy(path, name, value)
     return Policy(version=1, categories=categories)
 
 
@@ -91,21 +94,35 @@ def _parse_category_policy(path: Path, name: str, raw: Any) -> CategoryPolicy:
     if not isinstance(raw, dict):
         raise ValueError(f"{path}: category {name!r} must be an object")
 
+    description = raw.get("description", "")
+    if not isinstance(description, str):
+        raise ValueError(f"{path}: category {name!r} field 'description' must be a string")
+
+    high_risk = raw.get("high_risk", False)
+    if not isinstance(high_risk, bool):
+        raise ValueError(f"{path}: category {name!r} field 'high_risk' must be a boolean")
+
     redaction = raw.get("redaction")
     if not isinstance(redaction, str) or not redaction:
         raise ValueError(f"{path}: category {name!r} must define a redaction string")
 
     return CategoryPolicy(
-        description=str(raw.get("description", "")),
-        high_risk=bool(raw.get("high_risk", False)),
-        deny_layers=_as_str_set(path, name, raw.get("deny_layers", []), "deny_layers"),
-        redact_layers=_as_str_set(path, name, raw.get("redact_layers", []), "redact_layers"),
-        allow_layers=_as_str_set(path, name, raw.get("allow_layers", []), "allow_layers"),
+        description=description,
+        high_risk=high_risk,
+        deny_layers=_as_layer_set(path, name, raw.get("deny_layers", []), "deny_layers"),
+        redact_layers=_as_layer_set(path, name, raw.get("redact_layers", []), "redact_layers"),
+        allow_layers=_as_layer_set(path, name, raw.get("allow_layers", []), "allow_layers"),
         redaction=redaction,
     )
 
 
-def _as_str_set(path: Path, name: str, value: Any, field_name: str) -> frozenset[str]:
+def _as_layer_set(path: Path, name: str, value: Any, field_name: str) -> frozenset[str]:
     if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
         raise ValueError(f"{path}: category {name!r} field {field_name!r} must be a string array")
+    unsupported = sorted(set(value) - SUPPORTED_LAYERS)
+    if unsupported:
+        raise ValueError(
+            f"{path}: category {name!r} field {field_name!r} contains unsupported layer(s): "
+            f"{', '.join(unsupported)}; expected one of: {supported_layers_text()}"
+        )
     return frozenset(value)

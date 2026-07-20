@@ -46,6 +46,8 @@ Run the MVP tests:
 PYTHONPATH=src python3 -m unittest discover -s tests
 ```
 
+Invalid trace or policy input returns exit code `2` and writes the validation error to stderr.
+
 ## Context layers
 
 The first version focuses on:

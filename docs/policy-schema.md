@@ -28,6 +28,8 @@ The policy engine returns one disposition per candidate:
 
 `deny_layers` has precedence over `redact_layers`; `redact_layers` has precedence over `allow_layers`.
 
+Layer names in policy lists must be supported context layers.
+
 ## Example
 
 ```yaml

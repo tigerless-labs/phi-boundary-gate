@@ -1,0 +1,7 @@
+version: 1
+categories:
+  member_id:
+    description: Synthetic insurance member identifier.
+    high_risk: true
+    deny_layers:
+      - debug_log
