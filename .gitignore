@@ -10,6 +10,8 @@ __pycache__/
 reports/*.md
 reports/*.json
 !reports/.gitkeep
+!reports/sample-report.md
+!reports/sample-report.json
 
 # Never commit real data or local traces
 local_data/

@@ -10,7 +10,7 @@ The project starts with synthetic data only. It does not provide legal complianc
 
 ## What it does
 
-Planned first version:
+First version:
 
 - read a synthetic agent trace in JSONL format
 - read a PHI policy in YAML format
@@ -18,6 +18,33 @@ Planned first version:
 - track source and destination paths
 - output Markdown and JSON reports
 - suggest redaction for risky fields
+
+## Quick start
+
+```bash
+python3 -m pip install -e .
+phi-boundary-report \
+  --trace samples/traces/claim_agent_minimal.jsonl \
+  --policy samples/policies/default.yml \
+  --out reports/sample-report.md \
+  --json reports/sample-report.json
+```
+
+Without installing the package, run:
+
+```bash
+PYTHONPATH=src python3 -m phi_boundary_report.cli \
+  --trace samples/traces/claim_agent_minimal.jsonl \
+  --policy samples/policies/default.yml \
+  --out reports/sample-report.md \
+  --json reports/sample-report.json
+```
+
+Run the MVP tests:
+
+```bash
+PYTHONPATH=src python3 -m unittest discover -s tests
+```
 
 ## Context layers
 
@@ -50,4 +77,4 @@ A report should show:
 
 ## Development status
 
-Initial documentation scaffold. Implementation will be added after the MVP contract is reviewed.
+Runnable MVP thin slice with synthetic samples, policy-driven layer decisions, and Markdown/JSON reports.

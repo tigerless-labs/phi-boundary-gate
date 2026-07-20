@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "phi-context-boundary-report"
+version = "0.1.0"
+description = "Synthetic PHI context boundary reporting CLI."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["PyYAML>=6.0"]
+
+[project.scripts]
+phi-boundary-report = "phi_boundary_report.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

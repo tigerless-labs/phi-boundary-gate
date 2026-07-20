@@ -1,0 +1,79 @@
+version: 1
+categories:
+  name:
+    description: Synthetic patient or member name.
+    high_risk: true
+    deny_layers:
+      - debug_log
+    redact_layers:
+      - model_input
+      - rag_context
+      - tool_output
+      - memory
+    redaction: "[REDACTED_NAME]"
+  dob:
+    description: Synthetic date of birth.
+    high_risk: true
+    deny_layers:
+      - debug_log
+    redact_layers:
+      - model_input
+      - rag_context
+      - tool_output
+      - memory
+    redaction: "[REDACTED_DOB]"
+  phone:
+    description: Synthetic phone number.
+    high_risk: true
+    deny_layers:
+      - debug_log
+      - model_input
+    redact_layers:
+      - rag_context
+      - tool_output
+      - memory
+    redaction: "[REDACTED_PHONE]"
+  address:
+    description: Synthetic street address.
+    high_risk: true
+    deny_layers:
+      - debug_log
+      - model_input
+    redact_layers:
+      - rag_context
+      - tool_output
+      - memory
+    redaction: "[REDACTED_ADDRESS]"
+  member_id:
+    description: Synthetic insurance member identifier.
+    high_risk: true
+    deny_layers:
+      - debug_log
+    redact_layers:
+      - model_input
+      - rag_context
+      - tool_output
+      - memory
+    redaction: "[REDACTED_MEMBER_ID]"
+  claim_id:
+    description: Synthetic claim identifier.
+    high_risk: true
+    deny_layers:
+      - debug_log
+    redact_layers:
+      - model_input
+      - rag_context
+      - tool_output
+      - memory
+    redaction: "[REDACTED_CLAIM_ID]"
+  mrn:
+    description: Synthetic medical record number.
+    high_risk: true
+    deny_layers:
+      - debug_log
+      - model_input
+    redact_layers:
+      - rag_context
+      - tool_output
+      - memory
+    redaction: "[REDACTED_MRN]"

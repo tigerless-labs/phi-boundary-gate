@@ -1,0 +1,487 @@
+{
+  "findings": [
+    {
+      "category": "name",
+      "confidence": 0.86,
+      "destinations": [
+        {
+          "layer": "model_input",
+          "path": "prompt.messages[0].content"
+        }
+      ],
+      "event_id": "evt_001",
+      "finding_id": "finding-001",
+      "layer": "user_message",
+      "policy": {
+        "disposition": "allowed",
+        "risk": "high",
+        "rule": "name has no layer-specific restriction for user_message."
+      },
+      "reason": "Matched a labeled synthetic person name.",
+      "redaction": {
+        "action": "review",
+        "suggested_value": "[REDACTED_NAME]"
+      },
+      "source": {
+        "path": "chat.messages[0]",
+        "type": "synthetic_member_chat"
+      },
+      "span": {
+        "end": 22,
+        "start": 9
+      },
+      "value": "Casey Example"
+    },
+    {
+      "category": "dob",
+      "confidence": 0.95,
+      "destinations": [
+        {
+          "layer": "model_input",
+          "path": "prompt.messages[0].content"
+        }
+      ],
+      "event_id": "evt_001",
+      "finding_id": "finding-002",
+      "layer": "user_message",
+      "policy": {
+        "disposition": "allowed",
+        "risk": "high",
+        "rule": "dob has no layer-specific restriction for user_message."
+      },
+      "reason": "Matched a labeled date of birth.",
+      "redaction": {
+        "action": "review",
+        "suggested_value": "[REDACTED_DOB]"
+      },
+      "source": {
+        "path": "chat.messages[0]",
+        "type": "synthetic_member_chat"
+      },
+      "span": {
+        "end": 39,
+        "start": 29
+      },
+      "value": "1978-04-18"
+    },
+    {
+      "category": "member_id",
+      "confidence": 0.97,
+      "destinations": [
+        {
+          "layer": "model_input",
+          "path": "prompt.messages[0].content"
+        }
+      ],
+      "event_id": "evt_001",
+      "finding_id": "finding-003",
+      "layer": "user_message",
+      "policy": {
+        "disposition": "allowed",
+        "risk": "high",
+        "rule": "member_id has no layer-specific restriction for user_message."
+      },
+      "reason": "Matched a labeled synthetic member identifier.",
+      "redaction": {
+        "action": "review",
+        "suggested_value": "[REDACTED_MEMBER_ID]"
+      },
+      "source": {
+        "path": "chat.messages[0]",
+        "type": "synthetic_member_chat"
+      },
+      "span": {
+        "end": 64,
+        "start": 52
+      },
+      "value": "MBR-SYN-8842"
+    },
+    {
+      "category": "claim_id",
+      "confidence": 0.94,
+      "destinations": [
+        {
+          "layer": "model_input",
+          "path": "prompt.messages[0].content"
+        }
+      ],
+      "event_id": "evt_001",
+      "finding_id": "finding-004",
+      "layer": "user_message",
+      "policy": {
+        "disposition": "allowed",
+        "risk": "high",
+        "rule": "claim_id has no layer-specific restriction for user_message."
+      },
+      "reason": "Matched a synthetic claim identifier.",
+      "redaction": {
+        "action": "review",
+        "suggested_value": "[REDACTED_CLAIM_ID]"
+      },
+      "source": {
+        "path": "chat.messages[0]",
+        "type": "synthetic_member_chat"
+      },
+      "span": {
+        "end": 106,
+        "start": 93
+      },
+      "value": "CLM-SYN-44501"
+    },
+    {
+      "category": "phone",
+      "confidence": 0.92,
+      "destinations": [
+        {
+          "layer": "model_input",
+          "path": "prompt.context[0]"
+        }
+      ],
+      "event_id": "evt_002",
+      "finding_id": "finding-005",
+      "layer": "rag_context",
+      "policy": {
+        "disposition": "redact",
+        "risk": "high",
+        "rule": "phone requires redaction in rag_context."
+      },
+      "reason": "Matched a synthetic 555 phone number.",
+      "redaction": {
+        "action": "redact_before_this_layer",
+        "suggested_value": "[REDACTED_PHONE]"
+      },
+      "source": {
+        "path": "claims.synthetic_note[12]",
+        "type": "synthetic_claim_note"
+      },
+      "span": {
+        "end": 90,
+        "start": 78
+      },
+      "value": "555-013-4421"
+    },
+    {
+      "category": "claim_id",
+      "confidence": 0.94,
+      "destinations": [
+        {
+          "layer": "model_input",
+          "path": "prompt.context[1]"
+        },
+        {
+          "layer": "debug_log",
+          "path": "logs.debug.claim_lookup"
+        }
+      ],
+      "event_id": "evt_003",
+      "finding_id": "finding-006",
+      "layer": "tool_output",
+      "policy": {
+        "disposition": "redact",
+        "risk": "high",
+        "rule": "claim_id requires redaction in tool_output."
+      },
+      "reason": "Matched a synthetic claim identifier.",
+      "redaction": {
+        "action": "redact_before_this_layer",
+        "suggested_value": "[REDACTED_CLAIM_ID]"
+      },
+      "source": {
+        "path": "tools.claim_lookup.response",
+        "type": "synthetic_claim_lookup"
+      },
+      "span": {
+        "end": 37,
+        "start": 24
+      },
+      "value": "CLM-SYN-44501"
+    },
+    {
+      "category": "member_id",
+      "confidence": 0.97,
+      "destinations": [
+        {
+          "layer": "model_input",
+          "path": "prompt.context[1]"
+        },
+        {
+          "layer": "debug_log",
+          "path": "logs.debug.claim_lookup"
+        }
+      ],
+      "event_id": "evt_003",
+      "finding_id": "finding-007",
+      "layer": "tool_output",
+      "policy": {
+        "disposition": "redact",
+        "risk": "high",
+        "rule": "member_id requires redaction in tool_output."
+      },
+      "reason": "Matched a labeled synthetic member identifier.",
+      "redaction": {
+        "action": "redact_before_this_layer",
+        "suggested_value": "[REDACTED_MEMBER_ID]"
+      },
+      "source": {
+        "path": "tools.claim_lookup.response",
+        "type": "synthetic_claim_lookup"
+      },
+      "span": {
+        "end": 60,
+        "start": 48
+      },
+      "value": "MBR-SYN-8842"
+    },
+    {
+      "category": "mrn",
+      "confidence": 0.97,
+      "destinations": [
+        {
+          "layer": "model_input",
+          "path": "prompt.context[1]"
+        },
+        {
+          "layer": "debug_log",
+          "path": "logs.debug.claim_lookup"
+        }
+      ],
+      "event_id": "evt_003",
+      "finding_id": "finding-008",
+      "layer": "tool_output",
+      "policy": {
+        "disposition": "redact",
+        "risk": "high",
+        "rule": "mrn requires redaction in tool_output."
+      },
+      "reason": "Matched a labeled synthetic medical record number.",
+      "redaction": {
+        "action": "redact_before_this_layer",
+        "suggested_value": "[REDACTED_MRN]"
+      },
+      "source": {
+        "path": "tools.claim_lookup.response",
+        "type": "synthetic_claim_lookup"
+      },
+      "span": {
+        "end": 78,
+        "start": 65
+      },
+      "value": "MRN-SYN-22091"
+    },
+    {
+      "category": "address",
+      "confidence": 0.9,
+      "destinations": [
+        {
+          "layer": "model_input",
+          "path": "prompt.context[1]"
+        },
+        {
+          "layer": "debug_log",
+          "path": "logs.debug.claim_lookup"
+        }
+      ],
+      "event_id": "evt_003",
+      "finding_id": "finding-009",
+      "layer": "tool_output",
+      "policy": {
+        "disposition": "redact",
+        "risk": "high",
+        "rule": "address requires redaction in tool_output."
+      },
+      "reason": "Matched a labeled street address.",
+      "redaction": {
+        "action": "redact_before_this_layer",
+        "suggested_value": "[REDACTED_ADDRESS]"
+      },
+      "source": {
+        "path": "tools.claim_lookup.response",
+        "type": "synthetic_claim_lookup"
+      },
+      "span": {
+        "end": 108,
+        "start": 87
+      },
+      "value": "101 Example Harbor Rd"
+    },
+    {
+      "category": "claim_id",
+      "confidence": 0.94,
+      "destinations": [
+        {
+          "layer": "model_provider",
+          "path": "request.messages"
+        }
+      ],
+      "event_id": "evt_004",
+      "finding_id": "finding-010",
+      "layer": "model_input",
+      "policy": {
+        "disposition": "redact",
+        "risk": "high",
+        "rule": "claim_id requires redaction in model_input."
+      },
+      "reason": "Matched a synthetic claim identifier.",
+      "redaction": {
+        "action": "redact_before_this_layer",
+        "suggested_value": "[REDACTED_CLAIM_ID]"
+      },
+      "source": {
+        "path": "prompt",
+        "type": "assembled_prompt"
+      },
+      "span": {
+        "end": 29,
+        "start": 16
+      },
+      "value": "CLM-SYN-44501"
+    },
+    {
+      "category": "member_id",
+      "confidence": 0.97,
+      "destinations": [
+        {
+          "layer": "model_provider",
+          "path": "request.messages"
+        }
+      ],
+      "event_id": "evt_004",
+      "finding_id": "finding-011",
+      "layer": "model_input",
+      "policy": {
+        "disposition": "redact",
+        "risk": "high",
+        "rule": "member_id requires redaction in model_input."
+      },
+      "reason": "Matched a labeled synthetic member identifier.",
+      "redaction": {
+        "action": "redact_before_this_layer",
+        "suggested_value": "[REDACTED_MEMBER_ID]"
+      },
+      "source": {
+        "path": "prompt",
+        "type": "assembled_prompt"
+      },
+      "span": {
+        "end": 87,
+        "start": 75
+      },
+      "value": "MBR-SYN-8842"
+    },
+    {
+      "category": "member_id",
+      "confidence": 0.97,
+      "destinations": [],
+      "event_id": "evt_005",
+      "finding_id": "finding-012",
+      "layer": "debug_log",
+      "policy": {
+        "disposition": "violation",
+        "risk": "high",
+        "rule": "member_id is denied in debug_log."
+      },
+      "reason": "Matched a labeled synthetic member identifier.",
+      "redaction": {
+        "action": "remove_or_redact_before_this_layer",
+        "suggested_value": "[REDACTED_MEMBER_ID]"
+      },
+      "source": {
+        "path": "logs.debug.claim_lookup",
+        "type": "synthetic_logger"
+      },
+      "span": {
+        "end": 41,
+        "start": 29
+      },
+      "value": "MBR-SYN-8842"
+    },
+    {
+      "category": "claim_id",
+      "confidence": 0.94,
+      "destinations": [],
+      "event_id": "evt_005",
+      "finding_id": "finding-013",
+      "layer": "debug_log",
+      "policy": {
+        "disposition": "violation",
+        "risk": "high",
+        "rule": "claim_id is denied in debug_log."
+      },
+      "reason": "Matched a synthetic claim identifier.",
+      "redaction": {
+        "action": "remove_or_redact_before_this_layer",
+        "suggested_value": "[REDACTED_CLAIM_ID]"
+      },
+      "source": {
+        "path": "logs.debug.claim_lookup",
+        "type": "synthetic_logger"
+      },
+      "span": {
+        "end": 64,
+        "start": 51
+      },
+      "value": "CLM-SYN-44501"
+    },
+    {
+      "category": "claim_id",
+      "confidence": 0.94,
+      "destinations": [
+        {
+          "layer": "model_input",
+          "path": "prompt.memory"
+        }
+      ],
+      "event_id": "evt_006",
+      "finding_id": "finding-014",
+      "layer": "memory",
+      "policy": {
+        "disposition": "redact",
+        "risk": "high",
+        "rule": "claim_id requires redaction in memory."
+      },
+      "reason": "Matched a synthetic claim identifier.",
+      "redaction": {
+        "action": "redact_before_this_layer",
+        "suggested_value": "[REDACTED_CLAIM_ID]"
+      },
+      "source": {
+        "path": "memory.session.summary",
+        "type": "synthetic_agent_memory"
+      },
+      "span": {
+        "end": 40,
+        "start": 27
+      },
+      "value": "CLM-SYN-44501"
+    }
+  ],
+  "policy_path": "samples/policies/default.yml",
+  "schema_version": 1,
+  "summary": {
+    "by_category": {
+      "address": 1,
+      "claim_id": 5,
+      "dob": 1,
+      "member_id": 4,
+      "mrn": 1,
+      "name": 1,
+      "phone": 1
+    },
+    "by_disposition": {
+      "allowed": 4,
+      "redact": 8,
+      "violation": 2
+    },
+    "by_layer": {
+      "debug_log": 2,
+      "memory": 1,
+      "model_input": 2,
+      "rag_context": 1,
+      "tool_output": 4,
+      "user_message": 4
+    },
+    "high_risk_findings": 14,
+    "total_findings": 14
+  },
+  "trace_path": "samples/traces/claim_agent_minimal.jsonl"
+}
