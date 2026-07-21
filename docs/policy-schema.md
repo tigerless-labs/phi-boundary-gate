@@ -1,10 +1,10 @@
 # Policy Schema
 
-The MVP policy is YAML. It maps PHI candidate categories to layer-specific rules and redaction placeholders.
+The policy is YAML. It maps PHI candidate categories to layer-specific rules and redaction placeholders.
 
 ## Top-Level Fields
 
-- `version`: Policy version number. The MVP expects `1`.
+- `version`: Policy version number. The CLI expects `1`.
 - `categories`: Mapping of category name to category policy.
 
 ## Category Policy

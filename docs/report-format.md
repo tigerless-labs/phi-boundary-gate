@@ -1,16 +1,17 @@
 # Report Format
 
-The MVP writes both Markdown and JSON reports.
+The CLI writes both Markdown and JSON reports.
 
 ## JSON Report
 
 Top-level fields:
 
-- `schema_version`: Report schema version. The MVP writes `1`.
+- `schema_version`: Report schema version. The current report writes `2`.
 - `trace_path`: Input trace path.
 - `policy_path`: Input policy path.
 - `summary`: Finding counts by disposition and risk.
 - `findings`: Array of PHI candidate findings.
+- `boundary_exposures`: Array of grouped PHI boundary exposure summaries.
 
 ## Finding Object
 
@@ -29,16 +30,34 @@ Each finding contains:
 - `policy`: Policy disposition and risk.
 - `redaction`: Suggested redaction action and replacement value.
 
+## Boundary Exposure Object
+
+Boundary exposures group repeated findings by `category` and `value`. Each object contains:
+
+- `exposure_id`: Stable report-local identifier.
+- `category`: Candidate category.
+- `value`: Matched synthetic value.
+- `finding_ids`: Findings included in the group.
+- `event_ids`: Trace events where the candidate appeared.
+- `layers_seen`: Context layers in first-seen order.
+- `first_seen_event_id`: First event where the candidate appeared.
+- `worst_disposition`: Most severe policy disposition for the candidate.
+- `worst_layer`: Layer where the worst disposition appeared first.
+- `recommended_boundary_action`: Suggested engineering action.
+- `sources`: Unique trace source objects from grouped findings.
+- `destinations`: Unique trace destination objects from grouped findings.
+
 ## Markdown Report
 
 The Markdown report contains:
 
 - Title and source paths.
 - Summary counts.
+- Boundary exposure summary.
 - Findings table.
 - Per-finding source and destination details.
 - Review note that all findings are candidates and require human review.
 
 ## Candidate Language
 
-Reports must describe matches as PHI candidates, not confirmed PHI. The MVP detector is rule-based and may produce false positives or false negatives.
+Reports must describe matches as PHI candidates, not confirmed PHI. The current detector is rule-based and may produce false positives or false negatives.

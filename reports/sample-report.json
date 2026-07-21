@@ -1,4 +1,301 @@
 {
+  "boundary_exposures": [
+    {
+      "category": "claim_id",
+      "destinations": [
+        {
+          "layer": "model_input",
+          "path": "prompt.messages[0].content"
+        },
+        {
+          "layer": "model_input",
+          "path": "prompt.context[1]"
+        },
+        {
+          "layer": "debug_log",
+          "path": "logs.debug.claim_lookup"
+        },
+        {
+          "layer": "model_provider",
+          "path": "request.messages"
+        },
+        {
+          "layer": "model_input",
+          "path": "prompt.memory"
+        }
+      ],
+      "event_ids": [
+        "evt_001",
+        "evt_003",
+        "evt_004",
+        "evt_005",
+        "evt_006"
+      ],
+      "exposure_id": "exposure-001",
+      "finding_ids": [
+        "finding-004",
+        "finding-006",
+        "finding-010",
+        "finding-013",
+        "finding-014"
+      ],
+      "first_seen_event_id": "evt_001",
+      "layers_seen": [
+        "user_message",
+        "tool_output",
+        "model_input",
+        "debug_log",
+        "memory"
+      ],
+      "recommended_boundary_action": "Remove or redact before debug_log.",
+      "sources": [
+        {
+          "path": "chat.messages[0]",
+          "type": "synthetic_member_chat"
+        },
+        {
+          "path": "tools.claim_lookup.response",
+          "type": "synthetic_claim_lookup"
+        },
+        {
+          "path": "prompt",
+          "type": "assembled_prompt"
+        },
+        {
+          "path": "logs.debug.claim_lookup",
+          "type": "synthetic_logger"
+        },
+        {
+          "path": "memory.session.summary",
+          "type": "synthetic_agent_memory"
+        }
+      ],
+      "value": "CLM-SYN-44501",
+      "worst_disposition": "violation",
+      "worst_layer": "debug_log"
+    },
+    {
+      "category": "member_id",
+      "destinations": [
+        {
+          "layer": "model_input",
+          "path": "prompt.messages[0].content"
+        },
+        {
+          "layer": "model_input",
+          "path": "prompt.context[1]"
+        },
+        {
+          "layer": "debug_log",
+          "path": "logs.debug.claim_lookup"
+        },
+        {
+          "layer": "model_provider",
+          "path": "request.messages"
+        }
+      ],
+      "event_ids": [
+        "evt_001",
+        "evt_003",
+        "evt_004",
+        "evt_005"
+      ],
+      "exposure_id": "exposure-002",
+      "finding_ids": [
+        "finding-003",
+        "finding-007",
+        "finding-011",
+        "finding-012"
+      ],
+      "first_seen_event_id": "evt_001",
+      "layers_seen": [
+        "user_message",
+        "tool_output",
+        "model_input",
+        "debug_log"
+      ],
+      "recommended_boundary_action": "Remove or redact before debug_log.",
+      "sources": [
+        {
+          "path": "chat.messages[0]",
+          "type": "synthetic_member_chat"
+        },
+        {
+          "path": "tools.claim_lookup.response",
+          "type": "synthetic_claim_lookup"
+        },
+        {
+          "path": "prompt",
+          "type": "assembled_prompt"
+        },
+        {
+          "path": "logs.debug.claim_lookup",
+          "type": "synthetic_logger"
+        }
+      ],
+      "value": "MBR-SYN-8842",
+      "worst_disposition": "violation",
+      "worst_layer": "debug_log"
+    },
+    {
+      "category": "phone",
+      "destinations": [
+        {
+          "layer": "model_input",
+          "path": "prompt.context[0]"
+        }
+      ],
+      "event_ids": [
+        "evt_002"
+      ],
+      "exposure_id": "exposure-003",
+      "finding_ids": [
+        "finding-005"
+      ],
+      "first_seen_event_id": "evt_002",
+      "layers_seen": [
+        "rag_context"
+      ],
+      "recommended_boundary_action": "Redact before rag_context.",
+      "sources": [
+        {
+          "path": "claims.synthetic_note[12]",
+          "type": "synthetic_claim_note"
+        }
+      ],
+      "value": "555-013-4421",
+      "worst_disposition": "redact",
+      "worst_layer": "rag_context"
+    },
+    {
+      "category": "address",
+      "destinations": [
+        {
+          "layer": "model_input",
+          "path": "prompt.context[1]"
+        },
+        {
+          "layer": "debug_log",
+          "path": "logs.debug.claim_lookup"
+        }
+      ],
+      "event_ids": [
+        "evt_003"
+      ],
+      "exposure_id": "exposure-004",
+      "finding_ids": [
+        "finding-009"
+      ],
+      "first_seen_event_id": "evt_003",
+      "layers_seen": [
+        "tool_output"
+      ],
+      "recommended_boundary_action": "Redact before tool_output.",
+      "sources": [
+        {
+          "path": "tools.claim_lookup.response",
+          "type": "synthetic_claim_lookup"
+        }
+      ],
+      "value": "101 Example Harbor Rd",
+      "worst_disposition": "redact",
+      "worst_layer": "tool_output"
+    },
+    {
+      "category": "mrn",
+      "destinations": [
+        {
+          "layer": "model_input",
+          "path": "prompt.context[1]"
+        },
+        {
+          "layer": "debug_log",
+          "path": "logs.debug.claim_lookup"
+        }
+      ],
+      "event_ids": [
+        "evt_003"
+      ],
+      "exposure_id": "exposure-005",
+      "finding_ids": [
+        "finding-008"
+      ],
+      "first_seen_event_id": "evt_003",
+      "layers_seen": [
+        "tool_output"
+      ],
+      "recommended_boundary_action": "Redact before tool_output.",
+      "sources": [
+        {
+          "path": "tools.claim_lookup.response",
+          "type": "synthetic_claim_lookup"
+        }
+      ],
+      "value": "MRN-SYN-22091",
+      "worst_disposition": "redact",
+      "worst_layer": "tool_output"
+    },
+    {
+      "category": "dob",
+      "destinations": [
+        {
+          "layer": "model_input",
+          "path": "prompt.messages[0].content"
+        }
+      ],
+      "event_ids": [
+        "evt_001"
+      ],
+      "exposure_id": "exposure-006",
+      "finding_ids": [
+        "finding-002"
+      ],
+      "first_seen_event_id": "evt_001",
+      "layers_seen": [
+        "user_message"
+      ],
+      "recommended_boundary_action": "Review only; no policy boundary action required.",
+      "sources": [
+        {
+          "path": "chat.messages[0]",
+          "type": "synthetic_member_chat"
+        }
+      ],
+      "value": "1978-04-18",
+      "worst_disposition": "allowed",
+      "worst_layer": "user_message"
+    },
+    {
+      "category": "name",
+      "destinations": [
+        {
+          "layer": "model_input",
+          "path": "prompt.messages[0].content"
+        }
+      ],
+      "event_ids": [
+        "evt_001"
+      ],
+      "exposure_id": "exposure-007",
+      "finding_ids": [
+        "finding-001"
+      ],
+      "first_seen_event_id": "evt_001",
+      "layers_seen": [
+        "user_message"
+      ],
+      "recommended_boundary_action": "Review only; no policy boundary action required.",
+      "sources": [
+        {
+          "path": "chat.messages[0]",
+          "type": "synthetic_member_chat"
+        }
+      ],
+      "value": "Casey Example",
+      "worst_disposition": "allowed",
+      "worst_layer": "user_message"
+    }
+  ],
   "findings": [
     {
       "category": "name",
@@ -456,7 +753,7 @@
     }
   ],
   "policy_path": "samples/policies/default.yml",
-  "schema_version": 1,
+  "schema_version": 2,
   "summary": {
     "by_category": {
       "address": 1,
@@ -480,7 +777,13 @@
       "tool_output": 4,
       "user_message": 4
     },
+    "by_worst_disposition": {
+      "allowed": 2,
+      "redact": 3,
+      "violation": 2
+    },
     "high_risk_findings": 14,
+    "total_boundary_exposures": 7,
     "total_findings": 14
   },
   "trace_path": "samples/traces/claim_agent_minimal.jsonl"
