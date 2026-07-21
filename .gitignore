@@ -12,6 +12,7 @@ reports/*.json
 !reports/.gitkeep
 !reports/sample-report.md
 !reports/sample-report.json
+!reports/sample-redacted-trace.jsonl
 
 # Never commit real data or local traces
 local_data/

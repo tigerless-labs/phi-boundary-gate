@@ -11,6 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
+from phi_boundary_report import guard_text, redact_text, scan_text
 from phi_boundary_report.cli import main
 from phi_boundary_report.detectors import detect_candidates
 from phi_boundary_report.policy import load_policy
@@ -28,6 +29,44 @@ class BoundaryReportTest(unittest.TestCase):
         self.assertIn("name", categories)
         self.assertIn("dob", categories)
         self.assertIn("member_id", categories)
+
+    def test_public_scan_text_returns_policy_decisions(self) -> None:
+        policy = load_policy(ROOT / "samples/policies/default.yml")
+
+        findings = scan_text("member_id=MBR-SYN-8842", layer="debug_log", policy=policy)
+
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0]["category"], "member_id")
+        self.assertEqual(findings[0]["policy"]["disposition"], "violation")
+        self.assertEqual(findings[0]["redaction"]["suggested_value"], "[REDACTED_MEMBER_ID]")
+
+    def test_redact_text_replaces_all_supplied_candidate_spans(self) -> None:
+        policy = load_policy(ROOT / "samples/policies/default.yml")
+        text = "member_id=MBR-SYN-8842 claim_id=CLM-SYN-44501 member_id=MBR-SYN-8842"
+        findings = scan_text(text, layer="debug_log", policy=policy)
+
+        redacted = redact_text(text, findings)
+
+        self.assertNotIn("MBR-SYN-8842", redacted)
+        self.assertNotIn("CLM-SYN-44501", redacted)
+        self.assertEqual(redacted.count("[REDACTED_MEMBER_ID]"), 2)
+        self.assertEqual(redacted.count("[REDACTED_CLAIM_ID]"), 1)
+
+    def test_redact_text_leaves_no_phi_text_unchanged(self) -> None:
+        text = "No identifiers here."
+
+        self.assertEqual(redact_text(text, []), text)
+
+    def test_guard_text_returns_violation_decision_and_redacted_text(self) -> None:
+        policy = load_policy(ROOT / "samples/policies/default.yml")
+
+        decision = guard_text("debug member_id=MBR-SYN-8842", layer="debug_log", policy=policy)
+
+        self.assertTrue(decision.has_phi)
+        self.assertTrue(decision.has_redactions)
+        self.assertTrue(decision.has_violations)
+        self.assertEqual(decision.worst_disposition, "violation")
+        self.assertEqual(decision.redacted_text, "debug member_id=[REDACTED_MEMBER_ID]")
 
     def test_policy_flags_debug_log_identifier_as_violation(self) -> None:
         trace = load_trace(ROOT / "samples/traces/claim_agent_minimal.jsonl")
@@ -69,6 +108,34 @@ class BoundaryReportTest(unittest.TestCase):
             self.assertGreater(payload["summary"]["total_findings"], 0)
             self.assertIn("findings", payload)
             self.assertIn("boundary_exposures", payload)
+
+    def test_cli_writes_redacted_trace_when_requested(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            redacted_trace_path = tmp_path / "redacted.jsonl"
+
+            with redirect_stdout(StringIO()):
+                exit_code = main(
+                    [
+                        "--trace",
+                        str(ROOT / "samples/traces/claim_agent_minimal.jsonl"),
+                        "--policy",
+                        str(ROOT / "samples/policies/default.yml"),
+                        "--out",
+                        str(tmp_path / "report.md"),
+                        "--json",
+                        str(tmp_path / "report.json"),
+                        "--redacted-trace",
+                        str(redacted_trace_path),
+                    ]
+                )
+
+            self.assertEqual(exit_code, 0)
+            redacted_trace = redacted_trace_path.read_text(encoding="utf-8")
+            self.assertNotIn("MBR-SYN-8842", redacted_trace)
+            self.assertNotIn("CLM-SYN-44501", redacted_trace)
+            self.assertNotIn("Casey Example", redacted_trace)
+            self.assertIn("[REDACTED_MEMBER_ID]", redacted_trace)
 
     def test_report_groups_repeated_candidates_into_boundary_exposures(self) -> None:
         trace = load_trace(ROOT / "samples/traces/claim_agent_minimal.jsonl")
