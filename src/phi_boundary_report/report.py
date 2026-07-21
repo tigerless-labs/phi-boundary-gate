@@ -4,12 +4,10 @@ import json
 from pathlib import Path
 from typing import Any
 
+from .actions import DISPOSITION_RANK, recommended_boundary_action, redaction_action
 from .detectors import detect_candidates
 from .policy import Policy
 from .trace import TraceEvent
-
-
-DISPOSITION_RANK = {"allowed": 0, "redact": 1, "violation": 2}
 
 
 def build_report(events: list[TraceEvent], policy: Policy, trace_path: Path, policy_path: Path) -> dict[str, Any]:
@@ -37,7 +35,7 @@ def build_report(events: list[TraceEvent], policy: Policy, trace_path: Path, pol
                         "rule": decision.rule,
                     },
                     "redaction": {
-                        "action": _redaction_action(decision.disposition),
+                        "action": redaction_action(decision.disposition),
                         "suggested_value": decision.redaction,
                     },
                 }
@@ -220,7 +218,7 @@ def _boundary_exposures(findings: list[dict[str, Any]]) -> list[dict[str, Any]]:
     )
     for index, exposure in enumerate(sorted_exposures, start=1):
         exposure["exposure_id"] = f"exposure-{index:03d}"
-        exposure["recommended_boundary_action"] = _recommended_boundary_action(
+        exposure["recommended_boundary_action"] = recommended_boundary_action(
             exposure["worst_disposition"], exposure["worst_layer"]
         )
 
@@ -236,22 +234,6 @@ def _append_unique_object(items: list[dict[str, Any]], value: dict[str, Any]) ->
     encoded = json.dumps(value, sort_keys=True)
     if all(json.dumps(item, sort_keys=True) != encoded for item in items):
         items.append(value)
-
-
-def _recommended_boundary_action(disposition: str, layer: str) -> str:
-    if disposition == "violation":
-        return f"Remove or redact before {layer}."
-    if disposition == "redact":
-        return f"Redact before {layer}."
-    return "Review only; no policy boundary action required."
-
-
-def _redaction_action(disposition: str) -> str:
-    if disposition == "violation":
-        return "remove_or_redact_before_this_layer"
-    if disposition == "redact":
-        return "redact_before_this_layer"
-    return "review"
 
 
 def _escape_table(value: str) -> str:

@@ -37,7 +37,8 @@ PYTHONPATH=src python3 -m phi_boundary_report.cli \
   --trace samples/traces/claim_agent_minimal.jsonl \
   --policy samples/policies/default.yml \
   --out reports/sample-report.md \
-  --json reports/sample-report.json
+  --json reports/sample-report.json \
+  --redacted-trace reports/sample-redacted-trace.jsonl
 ```
 
 Run the tests:
@@ -68,6 +69,20 @@ A report should show:
 - which context layer it entered
 - whether policy allows it
 - what should be redacted
+
+## Library use
+
+Other Python projects can import the scanner and redactor directly:
+
+```python
+from pathlib import Path
+
+from phi_boundary_report import guard_text, load_policy
+
+policy = load_policy(Path("samples/policies/default.yml"))
+decision = guard_text("member_id=MBR-SYN-8842", layer="debug_log", policy=policy)
+safe_text = decision.redacted_text
+```
 
 ## Non-goals
 

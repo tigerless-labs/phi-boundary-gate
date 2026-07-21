@@ -7,3 +7,4 @@
 - Add CI after the first runnable CLI is merged.
 - Add packaged CLI install smoke test.
 - Add before/after boundary exposure comparison.
+- Add provider/model eligibility policy checks for BAA-controlled flows.
