@@ -3,11 +3,24 @@
 - Trace: `samples/traces/claim_agent_minimal.jsonl`
 - Policy: `samples/policies/default.yml`
 - Total PHI candidates: 14
+- Boundary exposures: 7
 - Violations: 2
 - Redaction required: 8
 - High-risk candidates: 14
 
 All findings are PHI candidates from a rule-based detector and require human review.
+
+## Boundary Exposures
+
+| ID | Category | Value | Layers Seen | Worst Disposition | Worst Layer | Recommended Action |
+| --- | --- | --- | --- | --- | --- | --- |
+| exposure-001 | claim_id | `CLM-SYN-44501` | user_message -> tool_output -> model_input -> debug_log -> memory | violation | debug_log | Remove or redact before debug_log. |
+| exposure-002 | member_id | `MBR-SYN-8842` | user_message -> tool_output -> model_input -> debug_log | violation | debug_log | Remove or redact before debug_log. |
+| exposure-003 | phone | `555-013-4421` | rag_context | redact | rag_context | Redact before rag_context. |
+| exposure-004 | address | `101 Example Harbor Rd` | tool_output | redact | tool_output | Redact before tool_output. |
+| exposure-005 | mrn | `MRN-SYN-22091` | tool_output | redact | tool_output | Redact before tool_output. |
+| exposure-006 | dob | `1978-04-18` | user_message | allowed | user_message | Review only; no policy boundary action required. |
+| exposure-007 | name | `Casey Example` | user_message | allowed | user_message | Review only; no policy boundary action required. |
 
 ## Findings
 

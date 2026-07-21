@@ -40,7 +40,7 @@ PYTHONPATH=src python3 -m phi_boundary_report.cli \
   --json reports/sample-report.json
 ```
 
-Run the MVP tests:
+Run the tests:
 
 ```bash
 PYTHONPATH=src python3 -m unittest discover -s tests
@@ -79,4 +79,4 @@ A report should show:
 
 ## Development status
 
-Runnable MVP thin slice with synthetic samples, policy-driven layer decisions, and Markdown/JSON reports.
+Runnable first version with synthetic samples, policy-driven layer decisions, and Markdown/JSON reports.

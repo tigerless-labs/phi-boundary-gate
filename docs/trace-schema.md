@@ -1,6 +1,6 @@
 # Trace Schema
 
-The MVP reads newline-delimited JSON. Each line is one synthetic context event.
+The CLI reads newline-delimited JSON. Each line is one synthetic context event.
 
 ## Event Object
 
@@ -51,4 +51,4 @@ When present, `layer` must be one of the supported layers and `path` must be a s
 
 ## Validation Notes
 
-The MVP validates only the fields required to produce a report. Additional fields are preserved as trace metadata but are not interpreted.
+The CLI validates only the fields required to produce a report. Additional fields are preserved as trace metadata but are not interpreted.

@@ -14,7 +14,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from phi_boundary_report.cli import main
 from phi_boundary_report.detectors import detect_candidates
 from phi_boundary_report.policy import load_policy
-from phi_boundary_report.report import build_report
+from phi_boundary_report.report import build_report, write_markdown_report
 from phi_boundary_report.trace import load_trace
 
 
@@ -68,6 +68,35 @@ class BoundaryReportTest(unittest.TestCase):
             payload = json.loads(json_path.read_text(encoding="utf-8"))
             self.assertGreater(payload["summary"]["total_findings"], 0)
             self.assertIn("findings", payload)
+            self.assertIn("boundary_exposures", payload)
+
+    def test_report_groups_repeated_candidates_into_boundary_exposures(self) -> None:
+        trace = load_trace(ROOT / "samples/traces/claim_agent_minimal.jsonl")
+        policy = load_policy(ROOT / "samples/policies/default.yml")
+
+        report = build_report(trace, policy, ROOT / "samples/traces/claim_agent_minimal.jsonl", ROOT / "samples/policies/default.yml")
+        member_exposure = next(
+            exposure
+            for exposure in report["boundary_exposures"]
+            if exposure["category"] == "member_id" and exposure["value"] == "MBR-SYN-8842"
+        )
+
+        self.assertEqual(member_exposure["first_seen_event_id"], "evt_001")
+        self.assertEqual(member_exposure["layers_seen"], ["user_message", "tool_output", "model_input", "debug_log"])
+        self.assertEqual(member_exposure["worst_disposition"], "violation")
+        self.assertEqual(member_exposure["worst_layer"], "debug_log")
+        self.assertIn("Remove or redact before debug_log.", member_exposure["recommended_boundary_action"])
+
+    def test_boundary_exposures_are_sorted_by_worst_disposition(self) -> None:
+        trace = load_trace(ROOT / "samples/traces/claim_agent_minimal.jsonl")
+        policy = load_policy(ROOT / "samples/policies/default.yml")
+
+        report = build_report(trace, policy, ROOT / "samples/traces/claim_agent_minimal.jsonl", ROOT / "samples/policies/default.yml")
+        severity = {"allowed": 0, "redact": 1, "violation": 2}
+        severities = [severity[exposure["worst_disposition"]] for exposure in report["boundary_exposures"]]
+
+        self.assertEqual(severities, sorted(severities, reverse=True))
+        self.assertEqual(report["boundary_exposures"][0]["worst_disposition"], "violation")
 
     def test_no_phi_trace_writes_zero_findings(self) -> None:
         trace = load_trace(ROOT / "samples/traces/no_phi.jsonl")
@@ -76,7 +105,23 @@ class BoundaryReportTest(unittest.TestCase):
         report = build_report(trace, policy, ROOT / "samples/traces/no_phi.jsonl", ROOT / "samples/policies/default.yml")
 
         self.assertEqual(report["summary"]["total_findings"], 0)
+        self.assertEqual(report["summary"]["total_boundary_exposures"], 0)
         self.assertEqual(report["findings"], [])
+        self.assertEqual(report["boundary_exposures"], [])
+
+    def test_markdown_includes_boundary_exposure_section(self) -> None:
+        trace = load_trace(ROOT / "samples/traces/claim_agent_minimal.jsonl")
+        policy = load_policy(ROOT / "samples/policies/default.yml")
+
+        report = build_report(trace, policy, ROOT / "samples/traces/claim_agent_minimal.jsonl", ROOT / "samples/policies/default.yml")
+        with tempfile.TemporaryDirectory() as tmp:
+            markdown_path = Path(tmp) / "report.md"
+
+            write_markdown_report(report, markdown_path)
+
+            markdown = markdown_path.read_text(encoding="utf-8")
+            self.assertIn("## Boundary Exposures", markdown)
+            self.assertIn("MBR-SYN-8842", markdown)
 
     def test_trace_missing_required_content_fails(self) -> None:
         with self.assertRaisesRegex(ValueError, "missing required field\\(s\\): content"):
