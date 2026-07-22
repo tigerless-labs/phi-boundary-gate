@@ -7,6 +7,7 @@
 - [Compliance policy schema](compliance-policy-schema.md) — BAA、covered service、模型和日志约束配置格式。
 - [Report format](report-format.md) — Markdown和JSON报告格式。
 - [Install and consume](install.md) — 本地editable安装、Git tag依赖和未来私有包路线。
+- [Release checklist](release-checklist.md) — Git tag发布前验证和下游固定版本接入步骤。
 - [Library API](library-api.md) — 可嵌入的scan/redact/guard API。
 - [Compliance guard](compliance-guard.md) — 可嵌入的PHI服务资格事前拦截API。
 - [Validation notes](validation-notes.md) — trace和policy输入校验行为。
