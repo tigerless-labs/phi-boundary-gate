@@ -10,6 +10,7 @@
 - [Validation notes](validation-notes.md) — trace和policy输入校验行为。
 - [Boundary exposure summary plan](plans/summarize-boundary-exposures.md) — PHI边界暴露摘要迭代计划。
 - [Policy-driven redaction API plan](plans/policy-driven-phi-redaction-api.md) — 可复用PHI脱敏API迭代计划。
+- [Stabilize redaction library API plan](plans/stabilize-redaction-library-api.md) — typed API收口迭代计划。
 
 Planned future docs:
 

@@ -40,7 +40,7 @@ def _trace_replacements(events: list[TraceEvent], policy: Policy) -> list[tuple[
     for event in events:
         decision = guard_text(event.content, event.layer, policy)
         for finding in decision.findings:
-            replacements.setdefault(finding["value"], finding["redaction"]["suggested_value"])
+            replacements.setdefault(finding.value, finding.redaction)
     return sorted(replacements.items(), key=lambda item: len(item[0]), reverse=True)
 
 
