@@ -11,7 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from phi_boundary_report import guard_text, redact_text, scan_text
+from phi_boundary_report import GuardDecision, ScanFinding, guard_text, redact_text, scan_text
 from phi_boundary_report.cli import main
 from phi_boundary_report.detectors import detect_candidates
 from phi_boundary_report.policy import load_policy
@@ -36,9 +36,21 @@ class BoundaryReportTest(unittest.TestCase):
         findings = scan_text("member_id=MBR-SYN-8842", layer="debug_log", policy=policy)
 
         self.assertEqual(len(findings), 1)
-        self.assertEqual(findings[0]["category"], "member_id")
-        self.assertEqual(findings[0]["policy"]["disposition"], "violation")
-        self.assertEqual(findings[0]["redaction"]["suggested_value"], "[REDACTED_MEMBER_ID]")
+        self.assertIsInstance(findings[0], ScanFinding)
+        self.assertEqual(findings[0].category, "member_id")
+        self.assertEqual(findings[0].disposition, "violation")
+        self.assertEqual(findings[0].redaction, "[REDACTED_MEMBER_ID]")
+
+    def test_scan_finding_to_dict_preserves_existing_shape(self) -> None:
+        policy = load_policy(ROOT / "samples/policies/default.yml")
+
+        finding = scan_text("member_id=MBR-SYN-8842", layer="debug_log", policy=policy)[0]
+        payload = finding.to_dict()
+
+        self.assertEqual(payload["category"], "member_id")
+        self.assertEqual(payload["span"], {"start": 10, "end": 22})
+        self.assertEqual(payload["policy"]["disposition"], "violation")
+        self.assertEqual(payload["redaction"]["suggested_value"], "[REDACTED_MEMBER_ID]")
 
     def test_redact_text_replaces_all_supplied_candidate_spans(self) -> None:
         policy = load_policy(ROOT / "samples/policies/default.yml")
@@ -62,11 +74,35 @@ class BoundaryReportTest(unittest.TestCase):
 
         decision = guard_text("debug member_id=MBR-SYN-8842", layer="debug_log", policy=policy)
 
+        self.assertIsInstance(decision, GuardDecision)
         self.assertTrue(decision.has_phi)
         self.assertTrue(decision.has_redactions)
         self.assertTrue(decision.has_violations)
         self.assertEqual(decision.worst_disposition, "violation")
         self.assertEqual(decision.redacted_text, "debug member_id=[REDACTED_MEMBER_ID]")
+        self.assertFalse(decision.should_block)
+        self.assertFalse(decision.should_redact)
+
+    def test_guard_text_modes_set_block_and_redact_flags(self) -> None:
+        policy = load_policy(ROOT / "samples/policies/default.yml")
+
+        block_decision = guard_text("member_id=MBR-SYN-8842", layer="debug_log", policy=policy, mode="block_on_violation")
+        redact_decision = guard_text("claim_id=CLM-SYN-44501", layer="model_input", policy=policy, mode="redact")
+
+        self.assertTrue(block_decision.should_block)
+        self.assertFalse(block_decision.should_redact)
+        self.assertFalse(redact_decision.should_block)
+        self.assertTrue(redact_decision.should_redact)
+
+    def test_guard_decision_to_dict_preserves_api_shape(self) -> None:
+        policy = load_policy(ROOT / "samples/policies/default.yml")
+
+        payload = guard_text("member_id=MBR-SYN-8842", layer="debug_log", policy=policy, mode="block_on_violation").to_dict()
+
+        self.assertEqual(payload["mode"], "block_on_violation")
+        self.assertTrue(payload["should_block"])
+        self.assertFalse(payload["should_redact"])
+        self.assertEqual(payload["findings"][0]["category"], "member_id")
 
     def test_policy_flags_debug_log_identifier_as_violation(self) -> None:
         trace = load_trace(ROOT / "samples/traces/claim_agent_minimal.jsonl")
