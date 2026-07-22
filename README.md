@@ -86,13 +86,39 @@ decision = guard_text("member_id=MBR-SYN-8842", layer="debug_log", policy=policy
 safe_text = decision.redacted_text
 ```
 
+Projects that route PHI to covered services can also use the compliance guard before provider calls:
+
+```python
+from phi_boundary_report import ComplianceContext, guard_compliance, load_compliance_policy
+
+compliance_policy = load_compliance_policy(Path("samples/compliance_policies/default.yml"))
+decision = guard_compliance(
+    "member_id=MBR-SYN-8842",
+    layer="model_input",
+    phi_policy=policy,
+    compliance_policy=compliance_policy,
+    context=ComplianceContext(
+        phi_status="real_phi",
+        vendor="google",
+        service="vertex_ai",
+        endpoint="generate_content",
+        model="gemini-2.5-pro",
+        feature="online_prediction",
+        environment="production",
+        logging="redacted_only",
+        storage="none",
+    ),
+)
+```
+
+The compliance guard enforces organization-supplied policy facts. It cannot automatically know whether your company has signed a BAA.
+
 ## Non-goals
 
 - no real PHI
 - no HIPAA compliance guarantee
 - no medical decision-making
-- no production middleware in the first version
-- no automatic blocking in the first version
+- no automatic discovery of vendor contract status
 
 ## Development status
 
