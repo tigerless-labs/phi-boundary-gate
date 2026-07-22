@@ -61,7 +61,41 @@ model_text = decision.redacted_text if decision.should_redact else decision.text
 payload = decision.to_dict()
 ```
 
-`guard_text` does not decide whether a provider or model is covered by a BAA. Calling projects must enforce provider eligibility, endpoint configuration, logging, retention, and access-control requirements.
+`guard_text` handles PHI detection and layer policy only. Use `guard_compliance` when a project also needs to enforce BAA, covered service, model, feature, logging, and storage eligibility.
+
+## Guard Before Covered Service Calls
+
+```python
+from pathlib import Path
+
+from phi_boundary_report import ComplianceContext, guard_compliance, load_compliance_policy
+
+compliance_policy = load_compliance_policy(Path("samples/compliance_policies/default.yml"))
+decision = guard_compliance(
+    "member_id=MBR-SYN-8842",
+    layer="model_input",
+    phi_policy=policy,
+    compliance_policy=compliance_policy,
+    context=ComplianceContext(
+        phi_status="real_phi",
+        vendor="google",
+        service="vertex_ai",
+        endpoint="generate_content",
+        model="gemini-2.5-pro",
+        feature="online_prediction",
+        environment="production",
+        logging="redacted_only",
+        storage="none",
+    ),
+)
+
+if decision.should_block:
+    raise RuntimeError(decision.block_reasons)
+
+audit_payload = decision.to_dict()
+```
+
+`guard_compliance` does not discover contract status. It enforces the BAA and service facts supplied by the calling organization's compliance policy.
 
 ## Guard Modes
 

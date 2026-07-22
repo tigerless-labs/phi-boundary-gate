@@ -1,0 +1,124 @@
+version: 1
+default_action: block
+
+phi_statuses:
+  non_phi:
+    requires_baa: false
+  synthetic:
+    requires_baa: false
+  deidentified:
+    requires_baa: true
+  real_phi:
+    requires_baa: true
+
+environments:
+  development:
+    require_redacted_logging: false
+    require_audit: false
+  production:
+    require_redacted_logging: true
+    require_audit: true
+
+services:
+  google_vertex_ai_ga_confirmed:
+    vendor: google
+    service: vertex_ai
+    covered_service: true
+    baa_executed: true
+    allowed_phi_status:
+      - non_phi
+      - synthetic
+      - deidentified
+      - real_phi
+    model_patterns:
+      - gemini-2.5-pro
+      - gemini-2.5-flash
+    denied_model_patterns:
+      - "*preview*"
+      - "*experimental*"
+      - "*beta*"
+    allowed_features:
+      - online_prediction
+    denied_features:
+      - web_search
+      - external_tools
+      - prompt_caching
+    allowed_logging:
+      - metadata_only
+      - redacted_only
+    allowed_storage:
+      - none
+      - encrypted_controlled
+    allow_preview: false
+    notes: Synthetic profile showing a BAA-confirmed covered service path.
+
+  google_vertex_ai_baa_pending:
+    vendor: google
+    service: vertex_ai
+    covered_service: true
+    baa_executed: false
+    allowed_phi_status:
+      - non_phi
+      - synthetic
+      - deidentified
+      - real_phi
+    model_patterns:
+      - gemini-2.5-pro
+    denied_model_patterns:
+      - "*preview*"
+      - "*experimental*"
+      - "*beta*"
+    allowed_features:
+      - online_prediction
+    allowed_logging:
+      - metadata_only
+      - redacted_only
+    allowed_storage:
+      - none
+      - encrypted_controlled
+    allow_preview: false
+    deny_reason: BAA is not confirmed for this service profile.
+
+  google_vertex_ai_preview:
+    vendor: google
+    service: vertex_ai
+    covered_service: true
+    baa_executed: false
+    allowed_phi_status:
+      - non_phi
+      - synthetic
+    model_patterns:
+      - "*preview*"
+      - "*experimental*"
+      - "*beta*"
+    denied_model_patterns:
+      - "*preview*"
+      - "*experimental*"
+      - "*beta*"
+    allowed_features:
+      - online_prediction
+    allowed_logging:
+      - metadata_only
+      - redacted_only
+    allowed_storage:
+      - none
+    allow_preview: false
+    deny_reason: Preview models are not approved for real PHI.
+
+  google_ai_studio:
+    vendor: google
+    service: ai_studio
+    covered_service: false
+    baa_executed: false
+    allowed_phi_status:
+      - non_phi
+      - synthetic
+    model_patterns:
+      - "*"
+    allowed_features:
+      - online_prediction
+    allowed_logging:
+      - metadata_only
+    allowed_storage:
+      - none
+    deny_reason: AI Studio is not approved for PHI.
