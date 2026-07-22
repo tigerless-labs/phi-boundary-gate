@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import sys
 import tempfile
+import tomllib
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
@@ -11,7 +12,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from phi_boundary_report import GuardDecision, ScanFinding, guard_text, redact_text, scan_text
+from phi_boundary_report import __version__, GuardDecision, ScanFinding, guard_text, redact_text, scan_text
 from phi_boundary_report.cli import main
 from phi_boundary_report.detectors import detect_candidates
 from phi_boundary_report.policy import load_policy
@@ -20,6 +21,11 @@ from phi_boundary_report.trace import load_trace
 
 
 class BoundaryReportTest(unittest.TestCase):
+    def test_package_version_matches_project_metadata(self) -> None:
+        metadata = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+
+        self.assertEqual(__version__, metadata["project"]["version"])
+
     def test_detector_finds_labeled_synthetic_candidates(self) -> None:
         content = "Patient: Casey Example. DOB: 1978-04-18. Member ID: MBR-SYN-8842."
 

@@ -10,7 +10,7 @@ The project starts with synthetic data only. It does not provide legal complianc
 
 ## What it does
 
-First version:
+Current version:
 
 - read a synthetic agent trace in JSONL format
 - read a PHI policy in YAML format
@@ -18,10 +18,13 @@ First version:
 - track source and destination paths
 - output Markdown and JSON reports
 - suggest redaction for risky fields
+- expose typed scan, redaction, and guard APIs for other Python projects
+- enforce organization-supplied BAA, covered service, model, feature, logging, and storage eligibility policy before provider calls
 
 ## Quick start
 
 For package installation options, including Git tag installs for other projects, see [Install and Consume as a Package](docs/install.md).
+For release notes, see [CHANGELOG](CHANGELOG.md).
 
 ```bash
 python3 -m pip install -e .
@@ -53,7 +56,7 @@ Invalid trace or policy input returns exit code `2` and writes the validation er
 
 ## Context layers
 
-The first version focuses on:
+The current context layers are:
 
 - user message
 - RAG context
@@ -122,4 +125,4 @@ The compliance guard enforces organization-supplied policy facts. It cannot auto
 
 ## Development status
 
-Runnable first version with synthetic samples, policy-driven layer decisions, and Markdown/JSON reports.
+Runnable v0.2.0 package with synthetic samples, policy-driven layer decisions, redaction helpers, Markdown/JSON reports, and a configurable compliance eligibility guard.
