@@ -21,6 +21,8 @@ First version:
 
 ## Quick start
 
+For package installation options, including Git tag installs for other projects, see [Install and Consume as a Package](docs/install.md).
+
 ```bash
 python3 -m pip install -e .
 phi-boundary-report \
