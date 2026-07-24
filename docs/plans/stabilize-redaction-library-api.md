@@ -24,6 +24,6 @@ Make the public Python API easier for other projects to integrate by replacing d
 ## Non-Goals
 
 - No provider or model BAA eligibility registry.
-- No `ai_translation` or `lara` integration changes.
+- No consumer-project integration changes.
 - No detector backend changes.
 - No report schema changes.

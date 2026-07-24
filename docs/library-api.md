@@ -9,8 +9,11 @@ from pathlib import Path
 
 from phi_boundary_report import load_policy
 
-policy = load_policy(Path("samples/policies/default.yml"))
+policy = load_policy(Path("config/phi-policy.yml"))
 ```
+
+The consuming project owns this policy file. The sample policies in this
+repository are examples to copy and adapt; they are not installed as package data.
 
 ## Scan Only
 
@@ -70,7 +73,7 @@ from pathlib import Path
 
 from phi_boundary_report import ComplianceContext, guard_compliance, load_compliance_policy
 
-compliance_policy = load_compliance_policy(Path("samples/compliance_policies/default.yml"))
+compliance_policy = load_compliance_policy(Path("config/phi-compliance-policy.yml"))
 decision = guard_compliance(
     "member_id=MBR-SYN-8842",
     layer="model_input",
@@ -109,13 +112,15 @@ audit_payload = decision.to_dict()
 
 ## Integration Patterns
 
-For `ai_translation`, call `guard_text(..., layer="model_input")` before provider routing. Use `should_block` to enforce project-level PHI mode and provider eligibility. Use `redacted_text` for logs and error summaries.
+For a model-routing service, call `guard_text(..., layer="model_input")` before provider routing. Use `should_block` to enforce project-level PHI mode and provider eligibility. Use `redacted_text` for logs and error summaries.
 
-For `lara`, call `guard_text` around trace/log boundaries such as user messages, tool results, assembled model input, and compaction memory. Use `redacted_text` for ordinary logs and keep full boundary reports for synthetic or approved traces only.
+For an agent runtime, call `guard_text` around trace and log boundaries such as user messages, tool results, assembled model input, and compaction memory. Use `redacted_text` for ordinary logs and keep full boundary reports for synthetic or approved traces only.
 
 For CI or offline audit, keep `mode="report_only"` and use the CLI report outputs.
 
 ## CLI Redacted Trace
+
+From this repository root:
 
 ```bash
 PYTHONPATH=src python3 -m phi_boundary_report.cli \

@@ -27,4 +27,4 @@ Expose the PHI scanner and redaction behavior as a lightweight Python API that o
 - No BAA provider registry.
 - No real PHI samples.
 - No HTTP sidecar service.
-- No integration changes in `ai_translation` or `lara`.
+- No consumer-project integration changes.

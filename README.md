@@ -5,6 +5,7 @@
   <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" />
   <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" />
   <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" />
+  <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
 </p>
 
 **PHI Context Boundary Report** scans synthetic agent traces and shows where PHI
@@ -26,14 +27,16 @@ calls when the configured PHI and compliance policy says the route is not allowe
 | **Boundary-first reports** | Groups repeated PHI candidates across trace events so you can see the path, not only the match. |
 | **Policy-driven redaction** | YAML policy decides whether each category is allowed, should be redacted, or is a violation in each layer. |
 | **Provider-call guard** | Checks organization-supplied BAA, covered service, model, feature, logging, and storage facts before PHI is sent. |
-| **Audit-safe by default** | Compliance decisions can be serialized without raw PHI values unless controlled debugging explicitly asks for them. |
+| **Audit-safe by default** | Compliance decisions can be serialized without detected raw PHI values unless controlled debugging explicitly asks for them. |
 | **Synthetic samples only** | The repository contains no real PHI and does not claim HIPAA compliance. |
 
 ## Quick Start
 
-For package installation options, including Git tag installs for other projects,
-see [Install and Consume as a Package](docs/install.md). For release notes, see
-[CHANGELOG](CHANGELOG.md).
+### Run the bundled sample
+
+Use this path when you have cloned this repository and are running commands from
+the repo root. The sample trace, policy, and report paths below are repository
+files, not package data installed into another project.
 
 ```bash
 python3 -m pip install -e .
@@ -57,6 +60,30 @@ PYTHONPATH=src python3 -m phi_boundary_report.cli \
 
 Invalid trace or policy input returns exit code `2` and writes the validation
 error to stderr.
+
+### Install from another project
+
+Use a Git tag when another project needs this package as a reproducible
+dependency:
+
+```bash
+python3 -m pip install \
+  "phi-context-boundary-report @ git+ssh://git@github.com/tigerless-labs/phi-context-boundary-report.git@v0.2.0"
+```
+
+The consuming environment needs Python 3.11 or newer, `pip`, and GitHub SSH
+access to this repository when installing from the Git URL. `pip` installs the
+runtime dependency `PyYAML>=6.0`.
+
+Consuming projects must provide their own PHI policy YAML. If they use the
+compliance guard, they must also provide their own compliance policy YAML with
+organization-approved BAA, covered service, model, feature, logging, and storage
+facts. The sample files under `samples/` are examples to copy and adapt; they are
+not installed as importable package resources.
+
+For `requirements.txt` and `pyproject.toml` examples, see
+[Install and Consume as a Package](docs/install.md). For release notes, see
+[CHANGELOG](CHANGELOG.md).
 
 ## What It Reads
 
@@ -99,6 +126,22 @@ categories:
 See [Trace Schema](docs/trace-schema.md) and [Policy Schema](docs/policy-schema.md)
 for the full contract.
 
+## Configuration You Provide
+
+At minimum, callers provide a PHI policy YAML file. Keep it in the consuming
+project's config path, for example `config/phi-policy.yml`, and review it with
+the team that owns logging, prompting, memory, and trace retention.
+
+If a project sends PHI to model providers or other covered services, also provide
+a compliance policy YAML file, for example `config/phi-compliance-policy.yml`.
+That file should be owned by the organization, not inferred by this package. The
+guard only enforces the facts in the file; it does not verify contracts or vendor
+terms.
+
+Do not commit real PHI, real traces, raw provider payloads, raw logs, or generated
+reports that contain real PHI. The bundled samples are synthetic fixtures for
+development and documentation.
+
 ## What It Reports
 
 The CLI writes two report formats from the same scan:
@@ -116,16 +159,20 @@ When `--redacted-trace` is provided, the CLI also writes a JSONL trace whose
 `content` fields use policy redaction placeholders. Exact repeats of a detected
 value are replaced across the trace.
 
+Redaction is detector-driven. If the detector misses a value, the package cannot
+redact it, so production use still needs caller-side controls and human review.
+
 ## Library API
 
-Other Python projects can import the scanner and redactor directly:
+After installing the package, other Python projects can import the scanner and
+redactor directly:
 
 ```python
 from pathlib import Path
 
 from phi_boundary_report import guard_text, load_policy
 
-policy = load_policy(Path("samples/policies/default.yml"))
+policy = load_policy(Path("config/phi-policy.yml"))
 decision = guard_text(
     "member_id=MBR-SYN-8842",
     layer="debug_log",
@@ -159,8 +206,8 @@ from phi_boundary_report import (
     load_policy,
 )
 
-phi_policy = load_policy(Path("samples/policies/default.yml"))
-compliance_policy = load_compliance_policy(Path("samples/compliance_policies/default.yml"))
+phi_policy = load_policy(Path("config/phi-policy.yml"))
+compliance_policy = load_compliance_policy(Path("config/phi-compliance-policy.yml"))
 
 decision = guard_compliance(
     "member_id=MBR-SYN-8842",
@@ -189,8 +236,8 @@ audit_payload = decision.to_dict()
 
 The guard enforces facts supplied by your organization. It cannot discover
 whether a BAA is signed, whether a service is covered, or whether a vendor changed
-its terms. Keep `samples/compliance_policies/default.yml` as a sample shape, not a
-contract source of truth.
+its terms. Keep the bundled compliance sample as a schema example, not a contract
+source of truth.
 
 See [Compliance Guard](docs/compliance-guard.md) and
 [Compliance Policy Schema](docs/compliance-policy-schema.md).
@@ -212,3 +259,7 @@ Current release: `v0.2.0`.
 - No medical decision-making is performed.
 - No automatic vendor contract discovery is attempted.
 - Detector results are PHI candidates and need human review.
+
+## License
+
+MIT - see [LICENSE](LICENSE).
