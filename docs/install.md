@@ -4,7 +4,7 @@ This project is a Python package. Other projects should import it through normal
 
 ## Local Editable Install
 
-Use this for local development across sibling repositories such as `ai_translation` or `lara`.
+Use this when developing this package beside another local project.
 
 ```bash
 python3 -m pip install -e /home/frank/code/phi-context-boundary-report
@@ -17,6 +17,9 @@ from phi_boundary_report import guard_text, load_policy
 ```
 
 Editable install is best for local integration because changes in this repository are visible immediately to the calling project's Python environment.
+
+The consuming project still needs its own policy files. The `samples/` directory
+is part of this repository's examples, not installed package data.
 
 ## Git Tag Install
 
@@ -66,17 +69,17 @@ For compatible changes:
 3. Create and push a new tag.
 4. Update consuming projects to the new tag.
 
-Example:
+Example for a new release:
 
 ```bash
-git tag v0.2.0
-git push origin v0.2.0
+git tag v<new-version>
+git push origin v<new-version>
 ```
 
 Then update the consuming project:
 
 ```text
-phi-context-boundary-report @ git+ssh://git@github.com/tigerless-labs/phi-context-boundary-report.git@v0.2.0
+phi-context-boundary-report @ git+ssh://git@github.com/tigerless-labs/phi-context-boundary-report.git@v<new-version>
 ```
 
 Use patch versions for compatible fixes. Use a minor version for new public API additions or behavior changes while the package is still pre-1.0.
@@ -121,5 +124,7 @@ The versioning workflow should stay the same. Only the package source changes fr
 ## Notes
 
 - Calling projects still need GitHub SSH access when installing from a Git URL.
+- Calling projects must provide their own PHI policy YAML, and their own compliance policy YAML if they use `guard_compliance`.
 - This package reports PHI candidates, redacts according to policy, and can enforce organization-supplied BAA/provider eligibility policy. It does not discover contract status automatically.
 - Do not commit real PHI, real traces, real logs, or real reports to this repository or consuming projects.
+- License: MIT. See [LICENSE](../LICENSE).

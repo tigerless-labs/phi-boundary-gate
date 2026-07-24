@@ -4,6 +4,9 @@ The compliance guard adds a deterministic eligibility check on top of PHI scanni
 
 It does not discover whether your company signed a BAA. That is an organizational fact. The guard enforces the facts supplied in a private compliance policy file.
 
+The consuming project must provide both policy files. The sample policies in this
+repository are fixtures and schema examples, not installed package data.
+
 ## Basic Use
 
 ```python
@@ -16,8 +19,8 @@ from phi_boundary_report import (
     load_policy,
 )
 
-phi_policy = load_policy(Path("samples/policies/default.yml"))
-compliance_policy = load_compliance_policy(Path("samples/compliance_policies/default.yml"))
+phi_policy = load_policy(Path("config/phi-policy.yml"))
+compliance_policy = load_compliance_policy(Path("config/phi-compliance-policy.yml"))
 
 decision = guard_compliance(
     "member_id=MBR-SYN-8842",

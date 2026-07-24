@@ -8,6 +8,7 @@ version = "0.2.0"
 description = "Synthetic PHI context boundary reporting and compliance guard toolkit."
 readme = "README.md"
 requires-python = ">=3.11"
+license = { file = "LICENSE" }
 dependencies = ["PyYAML>=6.0"]
 
 [project.scripts]
