@@ -30,6 +30,15 @@ The policy engine returns one disposition per candidate:
 
 Layer names in policy lists must be supported context layers.
 
+The bundled sample policy includes categories for common synthetic PHI variants
+such as `name`, `dob`, `date`, `phone`, `fax`, `email`, `ssn`, `address`,
+`zip_code`, `member_id`, `claim_id`, `mrn`, `policy_number`, `group_number`,
+`account_number`, `license_number`, `vehicle_id`, `device_id`, `url`, and
+`ip_address`. Consuming projects should copy and adapt the sample policy rather
+than relying on unconfigured categories. If a detector returns a category that is
+not present in the policy, the policy engine marks it `allowed` with
+`risk="unknown"` so the caller can decide whether to fail closed.
+
 ## Example
 
 ```yaml

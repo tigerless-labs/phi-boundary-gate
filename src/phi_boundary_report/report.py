@@ -10,11 +10,18 @@ from .policy import Policy
 from .trace import TraceEvent
 
 
-def build_report(events: list[TraceEvent], policy: Policy, trace_path: Path, policy_path: Path) -> dict[str, Any]:
+def build_report(
+    events: list[TraceEvent],
+    policy: Policy,
+    trace_path: Path,
+    policy_path: Path,
+    *,
+    enable_presidio: bool = False,
+) -> dict[str, Any]:
     findings: list[dict[str, Any]] = []
 
     for event in events:
-        for candidate in detect_candidates(event.content):
+        for candidate in detect_candidates(event.content, enable_presidio=enable_presidio):
             decision = policy.decide(candidate.category, event.layer)
             finding_number = len(findings) + 1
             findings.append(

@@ -33,6 +33,21 @@ payload = first.to_dict()
 
 Each finding is a `ScanFinding` object with typed attributes for the matched value, span, detector confidence, policy disposition, and suggested redaction placeholder. Use `to_dict()` when a JSON-compatible shape is needed.
 
+To add optional local Presidio-assisted NER spans, install the `ner` extra and
+pass `enable_presidio=True`:
+
+```python
+findings = scan_text(
+    "Casey Example called from (555) 013-4421.",
+    layer="model_input",
+    policy=policy,
+    enable_presidio=True,
+)
+```
+
+Presidio only contributes candidate spans. Policy disposition, redaction, and
+blocking decisions still come from this package's policy engine.
+
 ## Redact Before Logging
 
 ```python
@@ -55,6 +70,7 @@ decision = guard_text(
     layer="model_input",
     policy=policy,
     mode="block_on_violation",
+    enable_presidio=True,
 )
 
 if decision.should_block:
@@ -90,6 +106,7 @@ decision = guard_compliance(
         logging="redacted_only",
         storage="none",
     ),
+    enable_presidio=True,
 )
 
 if decision.should_block:

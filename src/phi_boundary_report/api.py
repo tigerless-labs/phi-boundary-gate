@@ -85,12 +85,12 @@ class GuardDecision:
         }
 
 
-def scan_text(text: str, layer: str, policy: Policy) -> list[ScanFinding]:
+def scan_text(text: str, layer: str, policy: Policy, *, enable_presidio: bool = False) -> list[ScanFinding]:
     if layer not in SUPPORTED_LAYERS:
         raise ValueError(f"unsupported layer {layer!r}; expected one of: {supported_layers_text()}")
 
     findings: list[ScanFinding] = []
-    for candidate in detect_candidates(text):
+    for candidate in detect_candidates(text, enable_presidio=enable_presidio):
         decision = policy.decide(candidate.category, layer)
         findings.append(
             ScanFinding(
@@ -119,11 +119,18 @@ def redact_text(text: str, findings: Sequence[ScanFinding | Mapping[str, Any]]) 
     return redacted
 
 
-def guard_text(text: str, layer: str, policy: Policy, mode: GuardMode = "report_only") -> GuardDecision:
+def guard_text(
+    text: str,
+    layer: str,
+    policy: Policy,
+    mode: GuardMode = "report_only",
+    *,
+    enable_presidio: bool = False,
+) -> GuardDecision:
     if mode not in ("report_only", "redact", "block_on_violation"):
         raise ValueError("mode must be one of: report_only, redact, block_on_violation")
 
-    findings = scan_text(text, layer, policy)
+    findings = scan_text(text, layer, policy, enable_presidio=enable_presidio)
     redacted_text = redact_text(text, findings)
     dispositions = [finding.disposition for finding in findings]
     worst = worst_disposition(dispositions)

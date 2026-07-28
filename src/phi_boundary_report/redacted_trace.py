@@ -9,11 +9,16 @@ from .policy import Policy
 from .trace import TraceEvent
 
 
-def redacted_trace_events(events: list[TraceEvent], policy: Policy) -> list[dict[str, Any]]:
-    replacements = _trace_replacements(events, policy)
+def redacted_trace_events(
+    events: list[TraceEvent],
+    policy: Policy,
+    *,
+    enable_presidio: bool = False,
+) -> list[dict[str, Any]]:
+    replacements = _trace_replacements(events, policy, enable_presidio=enable_presidio)
     redacted: list[dict[str, Any]] = []
     for event in events:
-        decision = guard_text(event.content, event.layer, policy)
+        decision = guard_text(event.content, event.layer, policy, enable_presidio=enable_presidio)
         content = _replace_known_values(decision.redacted_text, replacements)
         row: dict[str, Any] = {
             "event_id": event.event_id,
@@ -29,16 +34,30 @@ def redacted_trace_events(events: list[TraceEvent], policy: Policy) -> list[dict
     return redacted
 
 
-def write_redacted_trace(events: list[TraceEvent], policy: Policy, path: Path) -> None:
+def write_redacted_trace(
+    events: list[TraceEvent],
+    policy: Policy,
+    path: Path,
+    *,
+    enable_presidio: bool = False,
+) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    lines = [json.dumps(event, sort_keys=True) for event in redacted_trace_events(events, policy)]
+    lines = [
+        json.dumps(event, sort_keys=True)
+        for event in redacted_trace_events(events, policy, enable_presidio=enable_presidio)
+    ]
     path.write_text("\n".join(lines) + ("\n" if lines else ""), encoding="utf-8")
 
 
-def _trace_replacements(events: list[TraceEvent], policy: Policy) -> list[tuple[str, str]]:
+def _trace_replacements(
+    events: list[TraceEvent],
+    policy: Policy,
+    *,
+    enable_presidio: bool = False,
+) -> list[tuple[str, str]]:
     replacements: dict[str, str] = {}
     for event in events:
-        decision = guard_text(event.content, event.layer, policy)
+        decision = guard_text(event.content, event.layer, policy, enable_presidio=enable_presidio)
         for finding in decision.findings:
             replacements.setdefault(finding.value, finding.redaction)
     return sorted(replacements.items(), key=lambda item: len(item[0]), reverse=True)
