@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.1 - 2026-07-28
+
+- Added GitHub Actions CI for unit tests, release guard tests, compile checks, CLI smoke runs, and package smoke installation.
+- Added a release version guard that checks package version copies and requires a version bump when shipped surface changes.
+- Added repository quality tests for README version/install/safety content and detector-category coverage in the sample policy.
+- Documented update guidance and operational safety boundaries in the README.
+
 ## 0.3.0 - 2026-07-28
 
 - Expanded built-in regex detection for broader synthetic PHI variants:

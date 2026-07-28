@@ -27,7 +27,7 @@ Use this when another project needs a reproducible dependency without a private 
 
 ```bash
 python3 -m pip install \
-  "phi-context-boundary-report @ git+ssh://git@github.com/tigerless-labs/phi-context-boundary-report.git@v0.3.0"
+  "phi-context-boundary-report @ git+ssh://git@github.com/tigerless-labs/phi-context-boundary-report.git@v0.3.1"
 ```
 
 For short-term testing, a commit SHA is also valid:
@@ -42,7 +42,7 @@ Do not use `@main` for production or serious integration. It is not reproducible
 ## requirements.txt
 
 ```text
-phi-context-boundary-report @ git+ssh://git@github.com/tigerless-labs/phi-context-boundary-report.git@v0.3.0
+phi-context-boundary-report @ git+ssh://git@github.com/tigerless-labs/phi-context-boundary-report.git@v0.3.1
 ```
 
 Install from the consuming project:
@@ -56,7 +56,7 @@ python3 -m pip install -r requirements.txt
 ```toml
 [project]
 dependencies = [
-  "phi-context-boundary-report @ git+ssh://git@github.com/tigerless-labs/phi-context-boundary-report.git@v0.3.0",
+  "phi-context-boundary-report @ git+ssh://git@github.com/tigerless-labs/phi-context-boundary-report.git@v0.3.1",
 ]
 ```
 
@@ -68,7 +68,7 @@ English model in the consuming environment:
 
 ```bash
 python3 -m pip install \
-  "phi-context-boundary-report[ner] @ git+ssh://git@github.com/tigerless-labs/phi-context-boundary-report.git@v0.3.0"
+  "phi-context-boundary-report[ner] @ git+ssh://git@github.com/tigerless-labs/phi-context-boundary-report.git@v0.3.1"
 python3 -m spacy download en_core_web_lg
 ```
 
@@ -99,7 +99,7 @@ phi-context-boundary-report @ git+ssh://git@github.com/tigerless-labs/phi-contex
 
 Use patch versions for compatible fixes. Use a minor version for new public API additions or behavior changes while the package is still pre-1.0.
 
-## Release Checklist for v0.3.0
+## Release Checklist for v0.3.1
 
 Before tagging:
 
@@ -117,16 +117,16 @@ PYTHONPATH=src python3 -m phi_boundary_report.cli \
   --policy samples/policies/default.yml \
   --out /tmp/expanded-report.md \
   --json /tmp/expanded-report.json
-python3 -m pip install --no-build-isolation --no-deps --target /tmp/phi-package-smoke-v030 .
-PYTHONPATH=/tmp/phi-package-smoke-v030 python3 -c "from phi_boundary_report import __version__, guard_text, guard_compliance; print(__version__, guard_text.__name__, guard_compliance.__name__)"
-PYTHONPATH=/tmp/phi-package-smoke-v030 python3 -m phi_boundary_report.cli --help
+python3 -m pip install --no-build-isolation --no-deps --target /tmp/phi-package-smoke-v031 .
+PYTHONPATH=/tmp/phi-package-smoke-v031 python3 -c "from phi_boundary_report import __version__, guard_text, guard_compliance; print(__version__, guard_text.__name__, guard_compliance.__name__)"
+PYTHONPATH=/tmp/phi-package-smoke-v031 python3 -m phi_boundary_report.cli --help
 ```
 
 After the checks pass:
 
 ```bash
-git tag v0.3.0
-git push origin v0.3.0
+git tag v0.3.1
+git push origin v0.3.1
 ```
 
 ## Future Artifact Registry Route
@@ -136,7 +136,7 @@ When infrastructure permissions are ready, publish this package to a private Pyt
 Expected consuming-project dependency after that migration:
 
 ```text
-phi-context-boundary-report==0.3.0
+phi-context-boundary-report==0.3.1
 ```
 
 The versioning workflow should stay the same. Only the package source changes from Git URL to a private package index.

@@ -1,7 +1,7 @@
 <h1 align="center">PHI Context Boundary Report</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/release-v0.3.0-brightgreen.svg" alt="release v0.3.0" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
+  <img src="https://img.shields.io/badge/release-v0.3.1-brightgreen.svg" alt="release v0.3.1" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
 </p>
 
 **PHI Context Boundary Report** scans synthetic agent traces and shows where PHI
@@ -65,7 +65,7 @@ dependency:
 
 ```bash
 python3 -m pip install \
-  "phi-context-boundary-report @ git+ssh://git@github.com/tigerless-labs/phi-context-boundary-report.git@v0.3.0"
+  "phi-context-boundary-report @ git+ssh://git@github.com/tigerless-labs/phi-context-boundary-report.git@v0.3.1"
 ```
 
 The consuming environment needs Python 3.11 or newer, `pip`, and GitHub SSH
@@ -77,7 +77,7 @@ span detection in addition to the built-in regex rules:
 
 ```bash
 python3 -m pip install \
-  "phi-context-boundary-report[ner] @ git+ssh://git@github.com/tigerless-labs/phi-context-boundary-report.git@v0.3.0"
+  "phi-context-boundary-report[ner] @ git+ssh://git@github.com/tigerless-labs/phi-context-boundary-report.git@v0.3.1"
 python3 -m spacy download en_core_web_lg
 ```
 
@@ -100,6 +100,17 @@ compliance guard, they must also provide their own compliance policy YAML with
 organization-approved BAA, covered service, model, feature, logging, and storage
 facts. The sample files under `samples/` are examples to copy and adapt; they are
 not installed as importable package resources.
+
+### Update from another project
+
+Update consuming projects by changing the pinned Git tag and reinstalling:
+
+```text
+phi-context-boundary-report @ git+ssh://git@github.com/tigerless-labs/phi-context-boundary-report.git@v0.3.1
+```
+
+Do not pin `main` for production or serious integration. Tags are the reproducible
+contract for this package.
 
 For `requirements.txt` and `pyproject.toml` examples, see
 [Install and Consume as a Package](docs/install.md). For release notes, see
@@ -161,6 +172,18 @@ terms.
 Do not commit real PHI, real traces, raw provider payloads, raw logs, or generated
 reports that contain real PHI. The bundled samples are synthetic fixtures for
 development and documentation.
+
+## Operational Safety
+
+- Treat every detector result as a PHI candidate, not confirmed PHI.
+- Keep real PHI, raw provider payloads, raw logs, and reports containing real PHI
+  out of source control.
+- Remember that Markdown and JSON reports include matched values unless the caller
+  keeps reports synthetic or adds its own report-value redaction workflow.
+- Enable Presidio only in environments approved to process the text locally; it
+  adds local candidate spans but does not replace policy review.
+- Use `guard_compliance` before routing PHI-bearing text to a covered service; the
+  guard enforces only the BAA/service/model facts supplied by your organization.
 
 ## What It Reports
 
@@ -278,7 +301,7 @@ Run the tests:
 PYTHONPATH=src python3 -m unittest discover -s tests
 ```
 
-Current release: `v0.3.0`.
+Current release: `v0.3.1`.
 
 ## Limits
 
