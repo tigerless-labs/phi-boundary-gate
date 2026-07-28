@@ -177,10 +177,18 @@ def guard_compliance(
     phi_policy: Policy,
     compliance_policy: CompliancePolicy,
     context: ComplianceContext,
+    *,
+    enable_presidio: bool = False,
 ) -> ComplianceDecision:
     _validate_context(context)
 
-    text_decision = guard_text(text, layer=layer, policy=phi_policy, mode="block_on_violation")
+    text_decision = guard_text(
+        text,
+        layer=layer,
+        policy=phi_policy,
+        mode="block_on_violation",
+        enable_presidio=enable_presidio,
+    )
     service = compliance_policy.match_service(context)
     env_policy = compliance_policy.environments.get(context.environment, EnvironmentPolicy())
 

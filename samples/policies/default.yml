@@ -22,6 +22,17 @@ categories:
       - tool_output
       - memory
     redaction: "[REDACTED_DOB]"
+  date:
+    description: Individual-related healthcare date.
+    high_risk: true
+    deny_layers:
+      - debug_log
+    redact_layers:
+      - model_input
+      - rag_context
+      - tool_output
+      - memory
+    redaction: "[REDACTED_DATE]"
   phone:
     description: Synthetic phone number.
     high_risk: true
@@ -33,6 +44,39 @@ categories:
       - tool_output
       - memory
     redaction: "[REDACTED_PHONE]"
+  fax:
+    description: Fax number.
+    high_risk: true
+    deny_layers:
+      - debug_log
+      - model_input
+    redact_layers:
+      - rag_context
+      - tool_output
+      - memory
+    redaction: "[REDACTED_FAX]"
+  email:
+    description: Email address.
+    high_risk: true
+    deny_layers:
+      - debug_log
+    redact_layers:
+      - model_input
+      - rag_context
+      - tool_output
+      - memory
+    redaction: "[REDACTED_EMAIL]"
+  ssn:
+    description: Social Security number.
+    high_risk: true
+    deny_layers:
+      - debug_log
+      - model_input
+    redact_layers:
+      - rag_context
+      - tool_output
+      - memory
+    redaction: "[REDACTED_SSN]"
   address:
     description: Synthetic street address.
     high_risk: true
@@ -44,6 +88,17 @@ categories:
       - tool_output
       - memory
     redaction: "[REDACTED_ADDRESS]"
+  zip_code:
+    description: ZIP or postal code.
+    high_risk: true
+    deny_layers:
+      - debug_log
+      - model_input
+    redact_layers:
+      - rag_context
+      - tool_output
+      - memory
+    redaction: "[REDACTED_ZIP_CODE]"
   member_id:
     description: Synthetic insurance member identifier.
     high_risk: true
@@ -77,3 +132,91 @@ categories:
       - tool_output
       - memory
     redaction: "[REDACTED_MRN]"
+  policy_number:
+    description: Insurance policy number.
+    high_risk: true
+    deny_layers:
+      - debug_log
+    redact_layers:
+      - model_input
+      - rag_context
+      - tool_output
+      - memory
+    redaction: "[REDACTED_POLICY_NUMBER]"
+  group_number:
+    description: Insurance group number.
+    high_risk: true
+    deny_layers:
+      - debug_log
+    redact_layers:
+      - model_input
+      - rag_context
+      - tool_output
+      - memory
+    redaction: "[REDACTED_GROUP_NUMBER]"
+  account_number:
+    description: Account or billing number.
+    high_risk: true
+    deny_layers:
+      - debug_log
+    redact_layers:
+      - model_input
+      - rag_context
+      - tool_output
+      - memory
+    redaction: "[REDACTED_ACCOUNT_NUMBER]"
+  license_number:
+    description: License or certificate number.
+    high_risk: true
+    deny_layers:
+      - debug_log
+    redact_layers:
+      - model_input
+      - rag_context
+      - tool_output
+      - memory
+    redaction: "[REDACTED_LICENSE_NUMBER]"
+  vehicle_id:
+    description: Vehicle identifier or license plate.
+    high_risk: true
+    deny_layers:
+      - debug_log
+    redact_layers:
+      - model_input
+      - rag_context
+      - tool_output
+      - memory
+    redaction: "[REDACTED_VEHICLE_ID]"
+  device_id:
+    description: Device identifier or serial number.
+    high_risk: true
+    deny_layers:
+      - debug_log
+    redact_layers:
+      - model_input
+      - rag_context
+      - tool_output
+      - memory
+    redaction: "[REDACTED_DEVICE_ID]"
+  url:
+    description: URL that can identify an individual or record.
+    high_risk: true
+    deny_layers:
+      - debug_log
+    redact_layers:
+      - model_input
+      - rag_context
+      - tool_output
+      - memory
+    redaction: "[REDACTED_URL]"
+  ip_address:
+    description: Internet Protocol address.
+    high_risk: true
+    deny_layers:
+      - debug_log
+    redact_layers:
+      - model_input
+      - rag_context
+      - tool_output
+      - memory
+    redaction: "[REDACTED_IP_ADDRESS]"

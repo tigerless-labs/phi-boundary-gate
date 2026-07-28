@@ -60,4 +60,6 @@ The Markdown report contains:
 
 ## Candidate Language
 
-Reports must describe matches as PHI candidates, not confirmed PHI. The current detector is rule-based and may produce false positives or false negatives.
+Reports must describe matches as PHI candidates, not confirmed PHI. Built-in
+regex rules and optional local Presidio NER can both produce false positives or
+false negatives, so findings still require caller controls and human review.

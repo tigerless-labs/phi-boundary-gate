@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.3.0 - 2026-07-28
+
+- Expanded built-in regex detection for broader synthetic PHI variants:
+  - phone and fax formats
+  - email addresses
+  - SSNs
+  - street addresses, PO boxes, and ZIP codes
+  - individual-related healthcare dates
+  - member/subscriber, claim/authorization, MRN, policy, group, account, license, vehicle, and device identifiers
+  - URLs and IPv4 addresses
+- Added optional local Presidio-assisted NER detection behind explicit `enable_presidio=True` API parameters and the CLI `--enable-presidio` flag.
+- Added optional `ner` dependency extra for Presidio/spaCy integration without changing the default lightweight install.
+- Added span merging so deterministic regex findings take precedence over overlapping Presidio findings.
+- Added an expanded synthetic trace fixture and hybrid detection tests.
+- Updated sample policy categories, docs, and install examples for `v0.3.0`.
+
 ## 0.2.0 - 2026-07-23
 
 - Added typed compliance eligibility guard API:

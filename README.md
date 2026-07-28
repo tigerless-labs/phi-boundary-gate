@@ -1,7 +1,7 @@
 <h1 align="center">PHI Context Boundary Report</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/release-v0.2.0-brightgreen.svg" alt="release v0.2.0" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
+  <img src="https://img.shields.io/badge/release-v0.3.0-brightgreen.svg" alt="release v0.3.0" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
 </p>
 
 **PHI Context Boundary Report** scans synthetic agent traces and shows where PHI
@@ -21,6 +21,7 @@ calls when the configured PHI and compliance policy says the route is not allowe
 | | |
 |---|---|
 | **Boundary-first reports** | Groups repeated PHI candidates across trace events so you can see the path, not only the match. |
+| **Hybrid candidate detection** | Built-in regex rules cover common synthetic PHI variants; optional local Presidio detection can add NER-backed spans. |
 | **Policy-driven redaction** | YAML policy decides whether each category is allowed, should be redacted, or is a violation in each layer. |
 | **Provider-call guard** | Checks organization-supplied BAA, covered service, model, feature, logging, and storage facts before PHI is sent. |
 | **Audit-safe by default** | Compliance decisions can be serialized without detected raw PHI values unless controlled debugging explicitly asks for them. |
@@ -64,12 +65,35 @@ dependency:
 
 ```bash
 python3 -m pip install \
-  "phi-context-boundary-report @ git+ssh://git@github.com/tigerless-labs/phi-context-boundary-report.git@v0.2.0"
+  "phi-context-boundary-report @ git+ssh://git@github.com/tigerless-labs/phi-context-boundary-report.git@v0.3.0"
 ```
 
 The consuming environment needs Python 3.11 or newer, `pip`, and GitHub SSH
 access to this repository when installing from the Git URL. `pip` installs the
 runtime dependency `PyYAML>=6.0`.
+
+Optional local NER support is available for projects that want Presidio-assisted
+span detection in addition to the built-in regex rules:
+
+```bash
+python3 -m pip install \
+  "phi-context-boundary-report[ner] @ git+ssh://git@github.com/tigerless-labs/phi-context-boundary-report.git@v0.3.0"
+python3 -m spacy download en_core_web_lg
+```
+
+Then enable it explicitly:
+
+```bash
+phi-boundary-report \
+  --trace samples/traces/expanded_phi_variants.jsonl \
+  --policy samples/policies/default.yml \
+  --out reports/expanded-report.md \
+  --json reports/expanded-report.json \
+  --enable-presidio
+```
+
+Without `--enable-presidio`, scans stay dependency-light and use only the bundled
+deterministic rules.
 
 Consuming projects must provide their own PHI policy YAML. If they use the
 compliance guard, they must also provide their own compliance policy YAML with
@@ -157,6 +181,14 @@ value are replaced across the trace.
 
 Redaction is detector-driven. If the detector misses a value, the package cannot
 redact it, so production use still needs caller-side controls and human review.
+
+The bundled regex detector now covers broader synthetic variants for phone
+numbers, fax numbers, email addresses, SSNs, street addresses, PO boxes, ZIP
+codes, healthcare dates, member/subscriber IDs, claims and authorization IDs,
+MRNs, policy/group/account/license/device/vehicle identifiers, URLs, and IP
+addresses. Optional Presidio support can add local NER spans for names,
+locations, dates, and other PII-like entities; policy decisions and redaction are
+still made by this package.
 
 ## Library API
 
@@ -246,7 +278,7 @@ Run the tests:
 PYTHONPATH=src python3 -m unittest discover -s tests
 ```
 
-Current release: `v0.2.0`.
+Current release: `v0.3.0`.
 
 ## Limits
 

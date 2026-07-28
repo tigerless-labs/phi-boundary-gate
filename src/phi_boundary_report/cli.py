@@ -17,21 +17,29 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", required=True, type=Path, help="Path for the Markdown report.")
     parser.add_argument("--json", required=True, type=Path, dest="json_out", help="Path for the JSON report.")
     parser.add_argument("--redacted-trace", type=Path, help="Optional path for a redacted JSONL trace.")
+    parser.add_argument(
+        "--enable-presidio",
+        action="store_true",
+        help="Enable optional local Presidio PII detection in addition to built-in regex rules.",
+    )
     args = parser.parse_args(argv)
 
     try:
         events = load_trace(args.trace)
         policy = load_policy(args.policy)
+        report = build_report(events, policy, args.trace, args.policy, enable_presidio=args.enable_presidio)
     except (OSError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
 
-    report = build_report(events, policy, args.trace, args.policy)
-
     write_markdown_report(report, args.out)
     write_json_report(report, args.json_out)
     if args.redacted_trace:
-        write_redacted_trace(events, policy, args.redacted_trace)
+        try:
+            write_redacted_trace(events, policy, args.redacted_trace, enable_presidio=args.enable_presidio)
+        except ValueError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
 
     summary = report["summary"]
     redacted_note = f" and redacted trace {args.redacted_trace}" if args.redacted_trace else ""
