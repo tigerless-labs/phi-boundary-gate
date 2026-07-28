@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "phi-context-boundary-report"
-version = "0.3.0"
+version = "0.3.1"
 description = "Synthetic PHI context boundary reporting and compliance guard toolkit."
 readme = "README.md"
 requires-python = ">=3.11"

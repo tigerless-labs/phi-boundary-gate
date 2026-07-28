@@ -2,7 +2,7 @@
 
 Use this checklist before creating a Git tag that consuming projects will install from.
 
-## v0.3.0
+## v0.3.1
 
 Before tagging:
 
@@ -20,22 +20,24 @@ PYTHONPATH=src python3 -m phi_boundary_report.cli \
   --policy samples/policies/default.yml \
   --out /tmp/expanded-report.md \
   --json /tmp/expanded-report.json
-python3 -m pip install --no-build-isolation --no-deps --target /tmp/phi-package-smoke-v030 .
-PYTHONPATH=/tmp/phi-package-smoke-v030 python3 -c "from phi_boundary_report import __version__, guard_text, guard_compliance; print(__version__, guard_text.__name__, guard_compliance.__name__)"
-PYTHONPATH=/tmp/phi-package-smoke-v030 python3 -m phi_boundary_report.cli --help
+python3 -m unittest discover -s .github/scripts/tests
+python3 .github/scripts/check_release_version.py --skip-bump-check
+python3 -m pip install --no-build-isolation --no-deps --target /tmp/phi-package-smoke-v031 .
+PYTHONPATH=/tmp/phi-package-smoke-v031 python3 -c "from phi_boundary_report import __version__, guard_text, guard_compliance; print(__version__, guard_text.__name__, guard_compliance.__name__)"
+PYTHONPATH=/tmp/phi-package-smoke-v031 python3 -m phi_boundary_report.cli --help
 ```
 
 After checks pass on `main`:
 
 ```bash
-git tag v0.3.0
-git push origin v0.3.0
+git tag v0.3.1
+git push origin v0.3.1
 ```
 
 Downstream projects should pin the tag:
 
 ```text
-phi-context-boundary-report @ git+ssh://git@github.com/tigerless-labs/phi-context-boundary-report.git@v0.3.0
+phi-context-boundary-report @ git+ssh://git@github.com/tigerless-labs/phi-context-boundary-report.git@v0.3.1
 ```
 
 ## v0.2.0

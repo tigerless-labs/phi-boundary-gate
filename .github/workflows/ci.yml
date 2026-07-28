@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Unit tests
+        run: PYTHONPATH=src python3 -m unittest discover -s tests -v
+      - name: Release guard tests
+        run: python3 -m unittest discover -s .github/scripts/tests -v
+      - name: Compile
+        run: PYTHONPATH=src python3 -m compileall -q src tests .github/scripts
+      - name: CLI sample smoke
+        run: |
+          PYTHONPATH=src python3 -m phi_boundary_report.cli \
+            --trace samples/traces/claim_agent_minimal.jsonl \
+            --policy samples/policies/default.yml \
+            --out /tmp/phi-sample-report.md \
+            --json /tmp/phi-sample-report.json \
+            --redacted-trace /tmp/phi-sample-redacted.jsonl
+          PYTHONPATH=src python3 -m phi_boundary_report.cli \
+            --trace samples/traces/expanded_phi_variants.jsonl \
+            --policy samples/policies/default.yml \
+            --out /tmp/phi-expanded-report.md \
+            --json /tmp/phi-expanded-report.json
+      - name: Package smoke
+        run: |
+          python3 -m pip install --no-build-isolation --no-deps --target /tmp/phi-package-smoke .
+          PYTHONPATH=/tmp/phi-package-smoke python3 -c "from phi_boundary_report import __version__, guard_text, guard_compliance; print(__version__, guard_text.__name__, guard_compliance.__name__)"
+          PYTHONPATH=/tmp/phi-package-smoke python3 -m phi_boundary_report.cli --help
+
+  release-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Version copies agree and shipped surface is bumped
+        run: |
+          python3 .github/scripts/check_release_version.py \
+            --base-ref "origin/${{ github.base_ref || 'main' }}"
