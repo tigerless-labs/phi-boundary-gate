@@ -8,11 +8,11 @@ from types import SimpleNamespace
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from phi_boundary_report.detectors import detect_candidates  # noqa: E402
-from phi_boundary_report.policy import load_policy  # noqa: E402
-from phi_boundary_report.presidio_detector import detect_presidio_candidates  # noqa: E402
-from phi_boundary_report.report import build_report  # noqa: E402
-from phi_boundary_report.trace import load_trace  # noqa: E402
+from phi_boundary_gate.detectors import detect_candidates  # noqa: E402
+from phi_boundary_gate.policy import load_policy  # noqa: E402
+from phi_boundary_gate.presidio_detector import detect_presidio_candidates  # noqa: E402
+from phi_boundary_gate.report import build_report  # noqa: E402
+from phi_boundary_gate.trace import load_trace  # noqa: E402
 
 
 class FakeAnalyzer:

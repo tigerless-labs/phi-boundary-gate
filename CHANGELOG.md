@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0 - 2026-07-29
+
+- Renamed the project, package, CLI, and Python import path to PHI Boundary Gate.
+- Changed the install package name to `phi-boundary-gate` and the import module to `phi_boundary_gate`.
+- Changed the CLI entrypoint to `phi-boundary-gate`.
+- Updated documentation, examples, CI, release checks, and demo materials for the breaking rename.
+- Kept report-generation APIs and report output terminology where they describe actual Markdown/JSON reports.
+
 ## 0.3.2 - 2026-07-29
 
 - Added a synthetic trace corpus baseline for false-positive near misses, free-text PHI variants, structured payloads, and provider-boundary flows.

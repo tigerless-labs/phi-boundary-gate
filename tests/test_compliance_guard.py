@@ -8,7 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from phi_boundary_report import (  # noqa: E402
+from phi_boundary_gate import (  # noqa: E402
     ComplianceContext,
     ComplianceDecision,
     guard_compliance,

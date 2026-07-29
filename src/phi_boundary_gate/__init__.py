@@ -1,6 +1,6 @@
-"""PHI context boundary reporting and redaction."""
+"""PHI boundary gating, redaction, and audit reporting."""
 
-__version__ = "0.3.2"
+__version__ = "0.4.0"
 
 from .api import GuardDecision, GuardMode, ScanFinding, guard_text, redact_text, scan_text
 from .compliance import (

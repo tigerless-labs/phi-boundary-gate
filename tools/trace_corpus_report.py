@@ -8,10 +8,10 @@ from typing import Any
 
 import yaml
 
-from phi_boundary_report.detectors import detect_candidates
-from phi_boundary_report.report import build_report
-from phi_boundary_report.trace import load_trace
-from phi_boundary_report.policy import load_policy
+from phi_boundary_gate.detectors import detect_candidates
+from phi_boundary_gate.report import build_report
+from phi_boundary_gate.trace import load_trace
+from phi_boundary_gate.policy import load_policy
 
 
 def build_trace_corpus_report(

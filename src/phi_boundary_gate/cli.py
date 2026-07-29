@@ -11,7 +11,7 @@ from .trace import load_trace
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Generate a synthetic PHI context boundary report.")
+    parser = argparse.ArgumentParser(description="Gate synthetic PHI boundary flows and write audit reports.")
     parser.add_argument("--trace", required=True, type=Path, help="Path to a synthetic JSONL trace.")
     parser.add_argument("--policy", required=True, type=Path, help="Path to a YAML PHI policy.")
     parser.add_argument("--out", required=True, type=Path, help="Path for the Markdown report.")

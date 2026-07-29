@@ -13,6 +13,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - name: Install runtime dependencies
+        run: python3 -m pip install -e .
       - name: Unit tests
         run: PYTHONPATH=src python3 -m unittest discover -s tests -v
       - name: Release guard tests
@@ -21,13 +23,13 @@ jobs:
         run: PYTHONPATH=src python3 -m compileall -q src tests .github/scripts
       - name: CLI sample smoke
         run: |
-          PYTHONPATH=src python3 -m phi_boundary_report.cli \
+          PYTHONPATH=src python3 -m phi_boundary_gate.cli \
             --trace samples/traces/claim_agent_minimal.jsonl \
             --policy samples/policies/default.yml \
             --out /tmp/phi-sample-report.md \
             --json /tmp/phi-sample-report.json \
             --redacted-trace /tmp/phi-sample-redacted.jsonl
-          PYTHONPATH=src python3 -m phi_boundary_report.cli \
+          PYTHONPATH=src python3 -m phi_boundary_gate.cli \
             --trace samples/traces/expanded_phi_variants.jsonl \
             --policy samples/policies/default.yml \
             --out /tmp/phi-expanded-report.md \
@@ -43,8 +45,8 @@ jobs:
       - name: Package smoke
         run: |
           python3 -m pip install --no-build-isolation --no-deps --target /tmp/phi-package-smoke .
-          PYTHONPATH=/tmp/phi-package-smoke python3 -c "from phi_boundary_report import __version__, guard_text, guard_compliance; print(__version__, guard_text.__name__, guard_compliance.__name__)"
-          PYTHONPATH=/tmp/phi-package-smoke python3 -m phi_boundary_report.cli --help
+          PYTHONPATH=/tmp/phi-package-smoke python3 -c "from phi_boundary_gate import __version__, guard_text, guard_compliance; print(__version__, guard_text.__name__, guard_compliance.__name__)"
+          PYTHONPATH=/tmp/phi-package-smoke python3 -m phi_boundary_gate.cli --help
 
   release-guard:
     runs-on: ubuntu-latest

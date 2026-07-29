@@ -72,7 +72,7 @@ def write_markdown_report(report: dict[str, Any], path: Path) -> None:
 def render_markdown(report: dict[str, Any]) -> str:
     summary = report["summary"]
     lines = [
-        "# PHI Context Boundary Report",
+        "# PHI Boundary Gate Report",
         "",
         f"- Trace: `{report['trace_path']}`",
         f"- Policy: `{report['policy_path']}`",
