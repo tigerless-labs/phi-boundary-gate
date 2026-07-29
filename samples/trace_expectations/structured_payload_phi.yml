@@ -1,0 +1,24 @@
+trace: samples/traces/structured_payload_phi.jsonl
+kind: positive
+purpose: JSON-shaped content strings from tools, prompt metadata, debug logs, and memory.
+expected:
+  min_findings: 14
+  max_findings: 18
+  min_boundary_exposures: 9
+  required_categories:
+    - name
+    - dob
+    - phone
+    - email
+    - member_id
+    - claim_id
+    - account_number
+    - policy_number
+    - ip_address
+  required_layers:
+    - tool_output
+    - model_input
+    - debug_log
+    - memory
+known_gaps:
+  - The detector still treats JSON payloads as strings; it is not path-aware yet.

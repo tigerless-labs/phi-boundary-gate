@@ -26,6 +26,8 @@ SHIPPED_SURFACE_PREFIXES = (
     "src/",
     "samples/",
     "docs/",
+    "reports/trace-corpus-coverage.json",
+    "tools/",
     "README.md",
     "CHANGELOG.md",
     "pyproject.toml",

@@ -2,7 +2,7 @@
 
 Use this checklist before creating a Git tag that consuming projects will install from.
 
-## v0.3.1
+## v0.3.2
 
 Before tagging:
 
@@ -20,24 +20,30 @@ PYTHONPATH=src python3 -m phi_boundary_report.cli \
   --policy samples/policies/default.yml \
   --out /tmp/expanded-report.md \
   --json /tmp/expanded-report.json
+PYTHONPATH=src python3 tools/trace_corpus_report.py \
+  --traces samples/traces \
+  --expectations samples/trace_expectations \
+  --policy samples/policies/default.yml \
+  --out /tmp/trace-corpus-coverage.json
+diff -u reports/trace-corpus-coverage.json /tmp/trace-corpus-coverage.json
 python3 -m unittest discover -s .github/scripts/tests
 python3 .github/scripts/check_release_version.py --skip-bump-check
-python3 -m pip install --no-build-isolation --no-deps --target /tmp/phi-package-smoke-v031 .
-PYTHONPATH=/tmp/phi-package-smoke-v031 python3 -c "from phi_boundary_report import __version__, guard_text, guard_compliance; print(__version__, guard_text.__name__, guard_compliance.__name__)"
-PYTHONPATH=/tmp/phi-package-smoke-v031 python3 -m phi_boundary_report.cli --help
+python3 -m pip install --no-build-isolation --no-deps --target /tmp/phi-package-smoke-v032 .
+PYTHONPATH=/tmp/phi-package-smoke-v032 python3 -c "from phi_boundary_report import __version__, guard_text, guard_compliance; print(__version__, guard_text.__name__, guard_compliance.__name__)"
+PYTHONPATH=/tmp/phi-package-smoke-v032 python3 -m phi_boundary_report.cli --help
 ```
 
 After checks pass on `main`:
 
 ```bash
-git tag v0.3.1
-git push origin v0.3.1
+git tag v0.3.2
+git push origin v0.3.2
 ```
 
 Downstream projects should pin the tag:
 
 ```text
-phi-context-boundary-report @ git+ssh://git@github.com/tigerless-labs/phi-context-boundary-report.git@v0.3.1
+phi-context-boundary-report @ git+ssh://git@github.com/tigerless-labs/phi-context-boundary-report.git@v0.3.2
 ```
 
 ## v0.2.0

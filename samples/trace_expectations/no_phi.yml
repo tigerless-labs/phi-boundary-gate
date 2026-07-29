@@ -1,0 +1,13 @@
+trace: samples/traces/no_phi.jsonl
+kind: negative
+purpose: General claim appeal support text that should not create PHI candidate findings.
+expected:
+  min_findings: 0
+  max_findings: 0
+  min_boundary_exposures: 0
+  required_categories: []
+  required_layers:
+    - user_message
+    - rag_context
+    - debug_log
+known_gaps: []

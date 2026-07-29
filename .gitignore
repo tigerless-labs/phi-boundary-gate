@@ -13,6 +13,7 @@ reports/*.json
 !reports/sample-report.md
 !reports/sample-report.json
 !reports/sample-redacted-trace.jsonl
+!reports/trace-corpus-coverage.json
 
 # Never commit real data or local traces
 local_data/

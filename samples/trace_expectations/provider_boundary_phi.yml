@@ -1,0 +1,21 @@
+trace: samples/traces/provider_boundary_phi.jsonl
+kind: positive
+purpose: Provider-boundary scenario for Lara-style prompt assembly, memory, and debug logging.
+expected:
+  min_findings: 12
+  max_findings: 16
+  min_boundary_exposures: 5
+  required_categories:
+    - name
+    - member_id
+    - claim_id
+    - phone
+    - address
+  required_layers:
+    - user_message
+    - tool_output
+    - memory
+    - model_input
+    - debug_log
+known_gaps:
+  - MRN is present in mixed-case tool output but this fixture primarily gates provider-boundary flow.

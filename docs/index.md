@@ -3,7 +3,9 @@
 - [TODO](TODO.md) — 未排期事项、风险和后续补充项。
 - [Initial thin slice plan](plans/mvp-thin-slice.md) — 初版可运行端到端切片计划。
 - [Trace schema](trace-schema.md) — JSONL trace事件格式。
+- [Trace corpus](trace-corpus.md) — synthetic trace覆盖矩阵、expectation契约和已知缺口。
 - [Policy schema](policy-schema.md) — YAML policy策略格式。
+- [Detector roadmap](detector-roadmap.md) — detector当前基线、弱点和短期路线。
 - [Compliance policy schema](compliance-policy-schema.md) — BAA、covered service、模型和日志约束配置格式。
 - [Report format](report-format.md) — Markdown和JSON报告格式。
 - [Install and consume](install.md) — 本地editable安装、Git tag依赖和未来私有包路线。

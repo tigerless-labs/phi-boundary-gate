@@ -32,6 +32,14 @@ jobs:
             --policy samples/policies/default.yml \
             --out /tmp/phi-expanded-report.md \
             --json /tmp/phi-expanded-report.json
+      - name: Trace corpus coverage baseline
+        run: |
+          PYTHONPATH=src python3 tools/trace_corpus_report.py \
+            --traces samples/traces \
+            --expectations samples/trace_expectations \
+            --policy samples/policies/default.yml \
+            --out /tmp/trace-corpus-coverage.json
+          diff -u reports/trace-corpus-coverage.json /tmp/trace-corpus-coverage.json
       - name: Package smoke
         run: |
           python3 -m pip install --no-build-isolation --no-deps --target /tmp/phi-package-smoke .
