@@ -13,13 +13,13 @@ import check_release_version as guard  # noqa: E402
 
 
 def write_release_files(repo: Path, version: str) -> None:
-    (repo / "src/phi_boundary_report").mkdir(parents=True)
+    (repo / "src/phi_boundary_gate").mkdir(parents=True)
     (repo / "docs").mkdir()
     (repo / "pyproject.toml").write_text(
-        f'[project]\nname = "phi-context-boundary-report"\nversion = "{version}"\n',
+        f'[project]\nname = "phi-boundary-gate"\nversion = "{version}"\n',
         encoding="utf-8",
     )
-    (repo / "src/phi_boundary_report/__init__.py").write_text(
+    (repo / "src/phi_boundary_gate/__init__.py").write_text(
         f'__version__ = "{version}"\n',
         encoding="utf-8",
     )
@@ -28,7 +28,7 @@ def write_release_files(repo: Path, version: str) -> None:
         encoding="utf-8",
     )
     (repo / "docs/install.md").write_text(
-        f'phi-context-boundary-report @ git+ssh://git@github.com/tigerless-labs/phi-context-boundary-report.git@v{version}\n',
+        f'phi-boundary-gate @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v{version}\n',
         encoding="utf-8",
     )
     (repo / "CHANGELOG.md").write_text(

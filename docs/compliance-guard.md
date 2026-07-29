@@ -12,7 +12,7 @@ repository are fixtures and schema examples, not installed package data.
 ```python
 from pathlib import Path
 
-from phi_boundary_report import (
+from phi_boundary_gate import (
     ComplianceContext,
     guard_compliance,
     load_compliance_policy,

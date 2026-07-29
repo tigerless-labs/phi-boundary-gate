@@ -7,7 +7,7 @@ The package can be imported by other Python projects that need lightweight PHI c
 ```python
 from pathlib import Path
 
-from phi_boundary_report import load_policy
+from phi_boundary_gate import load_policy
 
 policy = load_policy(Path("config/phi-policy.yml"))
 ```
@@ -18,7 +18,7 @@ repository are examples to copy and adapt; they are not installed as package dat
 ## Scan Only
 
 ```python
-from phi_boundary_report import ScanFinding, scan_text
+from phi_boundary_gate import ScanFinding, scan_text
 
 findings = scan_text(
     "Member ID: MBR-SYN-8842",
@@ -51,7 +51,7 @@ blocking decisions still come from this package's policy engine.
 ## Redact Before Logging
 
 ```python
-from phi_boundary_report import guard_text, redact_text, scan_text
+from phi_boundary_gate import guard_text, redact_text, scan_text
 
 text = "debug member_id=MBR-SYN-8842"
 findings = scan_text(text, layer="debug_log", policy=policy)
@@ -63,7 +63,7 @@ safe_log_text = redact_text(text, findings)
 ## Guard Before Model Calls
 
 ```python
-from phi_boundary_report import guard_text
+from phi_boundary_gate import guard_text
 
 decision = guard_text(
     "Summarize claim CLM-SYN-44501",
@@ -87,7 +87,7 @@ payload = decision.to_dict()
 ```python
 from pathlib import Path
 
-from phi_boundary_report import ComplianceContext, guard_compliance, load_compliance_policy
+from phi_boundary_gate import ComplianceContext, guard_compliance, load_compliance_policy
 
 compliance_policy = load_compliance_policy(Path("config/phi-compliance-policy.yml"))
 decision = guard_compliance(
@@ -140,7 +140,7 @@ For CI or offline audit, keep `mode="report_only"` and use the CLI report output
 From this repository root:
 
 ```bash
-PYTHONPATH=src python3 -m phi_boundary_report.cli \
+PYTHONPATH=src python3 -m phi_boundary_gate.cli \
   --trace samples/traces/claim_agent_minimal.jsonl \
   --policy samples/policies/default.yml \
   --out reports/sample-report.md \

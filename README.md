@@ -1,11 +1,11 @@
-<h1 align="center">PHI Context Boundary Report</h1>
+<h1 align="center">PHI Boundary Gate</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/release-v0.3.2-brightgreen.svg" alt="release v0.3.2" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
+  <img src="https://img.shields.io/badge/release-v0.4.0-brightgreen.svg" alt="release v0.4.0" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
 </p>
 
-**PHI Context Boundary Report** scans synthetic agent traces and shows where PHI
-candidates cross context boundaries: user messages, RAG context, tool output,
+**PHI Boundary Gate** detects, gates, redacts, and reports PHI candidate
+movement across AI context boundaries: user messages, RAG context, tool output,
 model input, memory, debug logs, and provider requests.
 
 It is built for healthcare and insurance AI workflows where an identifier match
@@ -38,7 +38,7 @@ files, not package data installed into another project.
 
 ```bash
 python3 -m pip install -e .
-phi-boundary-report \
+phi-boundary-gate \
   --trace samples/traces/claim_agent_minimal.jsonl \
   --policy samples/policies/default.yml \
   --out reports/sample-report.md \
@@ -48,7 +48,7 @@ phi-boundary-report \
 Run the same command without installing the package:
 
 ```bash
-PYTHONPATH=src python3 -m phi_boundary_report.cli \
+PYTHONPATH=src python3 -m phi_boundary_gate.cli \
   --trace samples/traces/claim_agent_minimal.jsonl \
   --policy samples/policies/default.yml \
   --out reports/sample-report.md \
@@ -66,7 +66,7 @@ dependency:
 
 ```bash
 python3 -m pip install \
-  "phi-context-boundary-report @ git+ssh://git@github.com/tigerless-labs/phi-context-boundary-report.git@v0.3.2"
+  "phi-boundary-gate @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.4.0"
 ```
 
 The consuming environment needs Python 3.11 or newer, `pip`, and GitHub SSH
@@ -78,14 +78,14 @@ span detection in addition to the built-in regex rules:
 
 ```bash
 python3 -m pip install \
-  "phi-context-boundary-report[ner] @ git+ssh://git@github.com/tigerless-labs/phi-context-boundary-report.git@v0.3.2"
+  "phi-boundary-gate[ner] @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.4.0"
 python3 -m spacy download en_core_web_lg
 ```
 
 Then enable it explicitly:
 
 ```bash
-phi-boundary-report \
+phi-boundary-gate \
   --trace samples/traces/expanded_phi_variants.jsonl \
   --policy samples/policies/default.yml \
   --out reports/expanded-report.md \
@@ -107,7 +107,7 @@ not installed as importable package resources.
 Update consuming projects by changing the pinned Git tag and reinstalling:
 
 ```text
-phi-context-boundary-report @ git+ssh://git@github.com/tigerless-labs/phi-context-boundary-report.git@v0.3.2
+phi-boundary-gate @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.4.0
 ```
 
 Do not pin `main` for production or serious integration. Tags are the reproducible
@@ -226,7 +226,7 @@ redactor directly:
 ```python
 from pathlib import Path
 
-from phi_boundary_report import guard_text, load_policy
+from phi_boundary_gate import guard_text, load_policy
 
 policy = load_policy(Path("config/phi-policy.yml"))
 decision = guard_text(
@@ -255,7 +255,7 @@ provider calls:
 ```python
 from pathlib import Path
 
-from phi_boundary_report import (
+from phi_boundary_gate import (
     ComplianceContext,
     guard_compliance,
     load_compliance_policy,
@@ -306,7 +306,7 @@ Run the tests:
 PYTHONPATH=src python3 -m unittest discover -s tests
 ```
 
-Current release: `v0.3.2`.
+Current release: `v0.4.0`.
 
 ## Limits
 

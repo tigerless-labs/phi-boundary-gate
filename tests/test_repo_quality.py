@@ -9,9 +9,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from phi_boundary_report import __version__  # noqa: E402
-from phi_boundary_report.detectors import RULES, detect_candidates  # noqa: E402
-from phi_boundary_report.policy import load_policy  # noqa: E402
+from phi_boundary_gate import __version__  # noqa: E402
+from phi_boundary_gate.detectors import RULES, detect_candidates  # noqa: E402
+from phi_boundary_gate.policy import load_policy  # noqa: E402
 
 
 README = ROOT / "README.md"

@@ -12,7 +12,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from phi_boundary_report.trace import load_trace  # noqa: E402
+from phi_boundary_gate.trace import load_trace  # noqa: E402
 from tools.trace_corpus_report import build_trace_corpus_report  # noqa: E402
 
 

@@ -12,15 +12,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from phi_boundary_report import __version__, GuardDecision, ScanFinding, guard_text, redact_text, scan_text
-from phi_boundary_report.cli import main
-from phi_boundary_report.detectors import detect_candidates
-from phi_boundary_report.policy import load_policy
-from phi_boundary_report.report import build_report, write_markdown_report
-from phi_boundary_report.trace import load_trace
+from phi_boundary_gate import __version__, GuardDecision, ScanFinding, guard_text, redact_text, scan_text
+from phi_boundary_gate.cli import main
+from phi_boundary_gate.detectors import detect_candidates
+from phi_boundary_gate.policy import load_policy
+from phi_boundary_gate.report import build_report, write_markdown_report
+from phi_boundary_gate.trace import load_trace
 
 
-class BoundaryReportTest(unittest.TestCase):
+class BoundaryGateTest(unittest.TestCase):
     def test_package_version_matches_project_metadata(self) -> None:
         metadata = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
 
@@ -145,7 +145,7 @@ class BoundaryReportTest(unittest.TestCase):
                 )
 
             self.assertEqual(exit_code, 0)
-            self.assertIn("PHI Context Boundary Report", markdown_path.read_text(encoding="utf-8"))
+            self.assertIn("PHI Boundary Gate", markdown_path.read_text(encoding="utf-8"))
             payload = json.loads(json_path.read_text(encoding="utf-8"))
             self.assertGreater(payload["summary"]["total_findings"], 0)
             self.assertIn("findings", payload)

@@ -12,12 +12,12 @@ from pathlib import Path
 VERSION_RE = re.compile(r"^\d+\.\d+\.\d+$")
 INIT_VERSION_RE = re.compile(r'^__version__ = "([^"]+)"$', re.M)
 README_BADGE_RE = re.compile(r"badge/release-v(\d+\.\d+\.\d+)-")
-INSTALL_TAG_RE = re.compile(r"phi-context-boundary-report(?:\[ner\])? @ .*?@v(\d+\.\d+\.\d+)")
+INSTALL_TAG_RE = re.compile(r"phi-boundary-gate(?:\[ner\])? @ .*?@v(\d+\.\d+\.\d+)")
 CHANGELOG_TOP_RE = re.compile(r"^## (\d+\.\d+\.\d+) - ", re.M)
 
 VERSION_FILES = (
     "pyproject.toml",
-    "src/phi_boundary_report/__init__.py",
+    "src/phi_boundary_gate/__init__.py",
     "README.md",
     "docs/install.md",
     "CHANGELOG.md",
@@ -53,9 +53,9 @@ def read_pyproject_version(repo_root: Path) -> str:
 
 
 def read_init_version(repo_root: Path) -> str:
-    match = INIT_VERSION_RE.search(read_text(repo_root, "src/phi_boundary_report/__init__.py"))
+    match = INIT_VERSION_RE.search(read_text(repo_root, "src/phi_boundary_gate/__init__.py"))
     if not match:
-        raise VersionProblem("src/phi_boundary_report/__init__.py has no __version__ assignment")
+        raise VersionProblem("src/phi_boundary_gate/__init__.py has no __version__ assignment")
     version = match.group(1)
     assert_semver(version, "__init__.__version__")
     return version

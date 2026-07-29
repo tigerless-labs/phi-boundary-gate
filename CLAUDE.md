@@ -1,7 +1,7 @@
 # CLAUDE.md
 
-PHI Context Boundary Report：面向医疗保险AI工作流，追踪PHI是否进入prompt、RAG上下文、工具输出、memory或log，输出来源路径、风险位置与脱敏建议。
-一句话定位：**一个轻量、可复现、以合成数据为起点的PHI上下文边界报告工具**。
+PHI Boundary Gate：面向医疗保险AI工作流，追踪PHI是否进入prompt、RAG上下文、工具输出、memory或log，输出来源路径、风险位置与脱敏建议。
+一句话定位：**一个轻量、可复现、以合成数据为起点的PHI上下文边界gate和审计工具**。
 
 **技术栈**：Python CLI，JSONL trace，YAML policy，Markdown/JSON报告；本地开发优先使用WSL+Git工作流。
 
@@ -21,8 +21,8 @@ PHI Context Boundary Report：面向医疗保险AI工作流，追踪PHI是否进
    本项目只使用合成患者、合成claim、合成trace和脱敏样例，避免把真实姓名、DOB、电话、地址、Member ID、病历号、claim编号或诊断记录提交到Git。
 2. **本项目不是HIPAA合规结论工具。**
    输出是开发者调试和审计报告，只提示PHI路径、风险和脱敏建议，不替代法律、合规或安全团队判断。
-3. **第一版只做post-run报告，不做实时拦截。**
-   MVP先分析已有trace和上下文片段；是否阻断请求、是否接入生产流量，必须作为后续独立设计处理。
+3. **gate和报告都必须基于同一套检测与policy语义。**
+   CLI报告、`guard_text`、`guard_compliance`、redacted trace可以服务不同接入点，但不能各自解释PHI类别、layer边界或处置策略。
 4. **PHI识别结果必须标记为candidate。**
    检测器可能误报或漏报；报告必须保留置信度、来源和人工复核提示，不得把候选结果写成绝对事实。
 5. **路径追踪比单点脱敏更重要。**

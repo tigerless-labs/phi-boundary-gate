@@ -1,4 +1,4 @@
-# PHI Context Boundary Report
+# PHI Boundary Gate Report
 
 - Trace: `samples/traces/claim_agent_minimal.jsonl`
 - Policy: `samples/policies/default.yml`
