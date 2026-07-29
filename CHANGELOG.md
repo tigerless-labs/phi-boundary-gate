@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.2 - 2026-07-29
+
+- Added a synthetic trace corpus baseline for false-positive near misses, free-text PHI variants, structured payloads, and provider-boundary flows.
+- Added expectation YAML contracts for every valid trace fixture.
+- Added a trace corpus coverage report tool and committed `reports/trace-corpus-coverage.json` baseline.
+- Added trace corpus tests that validate expectations and keep the committed coverage baseline current.
+- Documented the trace corpus coverage matrix and detector roadmap.
+
 ## 0.3.1 - 2026-07-28
 
 - Added GitHub Actions CI for unit tests, release guard tests, compile checks, CLI smoke runs, and package smoke installation.

@@ -1,0 +1,226 @@
+{
+  "schema_version": 1,
+  "summary": {
+    "all_expectations_passed": true,
+    "categories_seen": [
+      "account_number",
+      "address",
+      "claim_id",
+      "date",
+      "device_id",
+      "dob",
+      "email",
+      "group_number",
+      "ip_address",
+      "member_id",
+      "mrn",
+      "name",
+      "phone",
+      "policy_number",
+      "ssn",
+      "url",
+      "vehicle_id",
+      "zip_code"
+    ],
+    "event_count": 34,
+    "finding_count": 75,
+    "layers_seen": [
+      "debug_log",
+      "memory",
+      "model_input",
+      "rag_context",
+      "tool_output",
+      "user_message"
+    ],
+    "trace_count": 7
+  },
+  "traces": [
+    {
+      "boundary_exposures": 7,
+      "categories": {
+        "address": 1,
+        "claim_id": 5,
+        "date": 1,
+        "dob": 1,
+        "member_id": 4,
+        "name": 1,
+        "phone": 1
+      },
+      "events": 6,
+      "expectation_failures": [],
+      "expectation_status": "pass",
+      "findings": 14,
+      "kind": "positive",
+      "known_gaps": [],
+      "layers": {
+        "debug_log": 2,
+        "memory": 1,
+        "model_input": 2,
+        "rag_context": 2,
+        "tool_output": 3,
+        "user_message": 4
+      },
+      "purpose": "Boundary-flow baseline across user, RAG, tool, model input, debug log, memory, and provider destination.",
+      "trace": "samples/traces/claim_agent_minimal.jsonl"
+    },
+    {
+      "boundary_exposures": 18,
+      "categories": {
+        "account_number": 1,
+        "address": 2,
+        "device_id": 1,
+        "email": 1,
+        "group_number": 1,
+        "ip_address": 1,
+        "member_id": 1,
+        "mrn": 1,
+        "name": 1,
+        "phone": 3,
+        "policy_number": 1,
+        "ssn": 1,
+        "url": 1,
+        "vehicle_id": 1,
+        "zip_code": 1
+      },
+      "events": 4,
+      "expectation_failures": [],
+      "expectation_status": "pass",
+      "findings": 18,
+      "kind": "positive",
+      "known_gaps": [
+        "International identifiers are out of scope for this fixture."
+      ],
+      "layers": {
+        "debug_log": 5,
+        "model_input": 6,
+        "tool_output": 3,
+        "user_message": 4
+      },
+      "purpose": "Expanded synthetic PHI variants for common US healthcare and insurance identifiers.",
+      "trace": "samples/traces/expanded_phi_variants.jsonl"
+    },
+    {
+      "boundary_exposures": 0,
+      "categories": {},
+      "events": 5,
+      "expectation_failures": [],
+      "expectation_status": "pass",
+      "findings": 0,
+      "kind": "negative",
+      "known_gaps": [
+        "Public addresses and infrastructure terms are included as non-PHI context examples."
+      ],
+      "layers": {
+        "debug_log": 0,
+        "memory": 0,
+        "rag_context": 0,
+        "tool_output": 0,
+        "user_message": 0
+      },
+      "purpose": "Near-miss language that should not be treated as PHI candidates.",
+      "trace": "samples/traces/false_positive_near_misses.jsonl"
+    },
+    {
+      "boundary_exposures": 12,
+      "categories": {
+        "address": 2,
+        "date": 5,
+        "email": 2,
+        "name": 4,
+        "phone": 3
+      },
+      "events": 6,
+      "expectation_failures": [],
+      "expectation_status": "pass",
+      "findings": 16,
+      "kind": "positive",
+      "known_gaps": [
+        "Relative dates such as \"last Friday\" are not required to match.",
+        "Unlabeled names remain best-effort without Presidio."
+      ],
+      "layers": {
+        "memory": 2,
+        "model_input": 3,
+        "rag_context": 3,
+        "tool_output": 3,
+        "user_message": 5
+      },
+      "purpose": "Free-text PHI forms that are less rigid than the minimal labeled trace.",
+      "trace": "samples/traces/free_text_phi_variants.jsonl"
+    },
+    {
+      "boundary_exposures": 0,
+      "categories": {},
+      "events": 3,
+      "expectation_failures": [],
+      "expectation_status": "pass",
+      "findings": 0,
+      "kind": "negative",
+      "known_gaps": [],
+      "layers": {
+        "debug_log": 0,
+        "rag_context": 0,
+        "user_message": 0
+      },
+      "purpose": "General claim appeal support text that should not create PHI candidate findings.",
+      "trace": "samples/traces/no_phi.jsonl"
+    },
+    {
+      "boundary_exposures": 5,
+      "categories": {
+        "address": 1,
+        "claim_id": 5,
+        "member_id": 4,
+        "name": 1,
+        "phone": 1
+      },
+      "events": 5,
+      "expectation_failures": [],
+      "expectation_status": "pass",
+      "findings": 12,
+      "kind": "positive",
+      "known_gaps": [
+        "MRN is present in mixed-case tool output but this fixture primarily gates provider-boundary flow."
+      ],
+      "layers": {
+        "debug_log": 2,
+        "memory": 2,
+        "model_input": 2,
+        "tool_output": 3,
+        "user_message": 3
+      },
+      "purpose": "Provider-boundary scenario for Lara-style prompt assembly, memory, and debug logging.",
+      "trace": "samples/traces/provider_boundary_phi.jsonl"
+    },
+    {
+      "boundary_exposures": 9,
+      "categories": {
+        "account_number": 1,
+        "claim_id": 4,
+        "dob": 1,
+        "email": 2,
+        "ip_address": 1,
+        "member_id": 3,
+        "name": 1,
+        "phone": 1,
+        "policy_number": 1
+      },
+      "events": 5,
+      "expectation_failures": [],
+      "expectation_status": "pass",
+      "findings": 15,
+      "kind": "positive",
+      "known_gaps": [
+        "The detector still treats JSON payloads as strings; it is not path-aware yet."
+      ],
+      "layers": {
+        "debug_log": 3,
+        "memory": 2,
+        "model_input": 3,
+        "tool_output": 7
+      },
+      "purpose": "JSON-shaped content strings from tools, prompt metadata, debug logs, and memory.",
+      "trace": "samples/traces/structured_payload_phi.jsonl"
+    }
+  ]
+}

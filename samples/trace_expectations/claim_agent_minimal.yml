@@ -1,0 +1,23 @@
+trace: samples/traces/claim_agent_minimal.jsonl
+kind: positive
+purpose: Boundary-flow baseline across user, RAG, tool, model input, debug log, memory, and provider destination.
+expected:
+  min_findings: 14
+  max_findings: 16
+  min_boundary_exposures: 7
+  required_categories:
+    - name
+    - dob
+    - date
+    - phone
+    - address
+    - member_id
+    - claim_id
+  required_layers:
+    - user_message
+    - rag_context
+    - tool_output
+    - model_input
+    - debug_log
+    - memory
+known_gaps: []

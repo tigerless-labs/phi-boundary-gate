@@ -1,0 +1,30 @@
+trace: samples/traces/expanded_phi_variants.jsonl
+kind: positive
+purpose: Expanded synthetic PHI variants for common US healthcare and insurance identifiers.
+expected:
+  min_findings: 18
+  max_findings: 22
+  min_boundary_exposures: 18
+  required_categories:
+    - name
+    - phone
+    - email
+    - address
+    - zip_code
+    - member_id
+    - policy_number
+    - group_number
+    - account_number
+    - mrn
+    - ssn
+    - vehicle_id
+    - device_id
+    - url
+    - ip_address
+  required_layers:
+    - user_message
+    - tool_output
+    - model_input
+    - debug_log
+known_gaps:
+  - International identifiers are out of scope for this fixture.

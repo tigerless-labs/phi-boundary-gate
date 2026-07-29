@@ -1,0 +1,22 @@
+trace: samples/traces/free_text_phi_variants.jsonl
+kind: positive
+purpose: Free-text PHI forms that are less rigid than the minimal labeled trace.
+expected:
+  min_findings: 14
+  max_findings: 20
+  min_boundary_exposures: 11
+  required_categories:
+    - name
+    - phone
+    - email
+    - address
+    - date
+  required_layers:
+    - user_message
+    - rag_context
+    - tool_output
+    - model_input
+    - memory
+known_gaps:
+  - Relative dates such as "last Friday" are not required to match.
+  - Unlabeled names remain best-effort without Presidio.

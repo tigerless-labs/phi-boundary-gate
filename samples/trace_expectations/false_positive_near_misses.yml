@@ -1,0 +1,16 @@
+trace: samples/traces/false_positive_near_misses.jsonl
+kind: negative
+purpose: Near-miss language that should not be treated as PHI candidates.
+expected:
+  min_findings: 0
+  max_findings: 0
+  min_boundary_exposures: 0
+  required_categories: []
+  required_layers:
+    - user_message
+    - rag_context
+    - tool_output
+    - debug_log
+    - memory
+known_gaps:
+  - Public addresses and infrastructure terms are included as non-PHI context examples.
