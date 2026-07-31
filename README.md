@@ -1,7 +1,7 @@
 <h1 align="center">PHI Boundary Gate</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/release-v0.4.0-brightgreen.svg" alt="release v0.4.0" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
+  <img src="https://img.shields.io/badge/release-v0.5.0-brightgreen.svg" alt="release v0.5.0" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
 </p>
 
 **PHI Boundary Gate** detects, gates, redacts, and reports PHI candidate
@@ -61,24 +61,20 @@ error to stderr.
 
 ### Install from another project
 
-Use a Git tag when another project needs this package as a reproducible
-dependency:
+Use the PyPI package for normal consumption:
 
 ```bash
-python3 -m pip install \
-  "phi-boundary-gate @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.4.0"
+python3 -m pip install "phi-boundary-gate>=0.5,<0.6"
 ```
 
-The consuming environment needs Python 3.11 or newer, `pip`, and GitHub SSH
-access to this repository when installing from the Git URL. `pip` installs the
-runtime dependency `PyYAML>=6.0`.
+The consuming environment needs Python 3.11 or newer and `pip`. `pip` installs
+the runtime dependency `PyYAML>=6.0`.
 
 Optional local NER support is available for projects that want Presidio-assisted
 span detection in addition to the built-in regex rules:
 
 ```bash
-python3 -m pip install \
-  "phi-boundary-gate[ner] @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.4.0"
+python3 -m pip install "phi-boundary-gate[ner]>=0.5,<0.6"
 python3 -m spacy download en_core_web_lg
 ```
 
@@ -102,16 +98,31 @@ organization-approved BAA, covered service, model, feature, logging, and storage
 facts. The sample files under `samples/` are examples to copy and adapt; they are
 not installed as importable package resources.
 
-### Update from another project
+To bootstrap a consuming project with starter policy files:
 
-Update consuming projects by changing the pinned Git tag and reinstalling:
-
-```text
-phi-boundary-gate @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.4.0
+```bash
+phi-boundary-gate init
+phi-boundary-gate check-config
 ```
 
-Do not pin `main` for production or serious integration. Tags are the reproducible
-contract for this package.
+This creates `.phi-boundary-gate/config.json`, `config/phi-policy.yml`, and
+`config/phi-compliance-policy.yml`. Review those files with the owners of your
+logging, prompting, memory, provider, and compliance controls before using them
+with real PHI.
+
+### Update from another project
+
+Update consuming projects through the package index:
+
+```bash
+python3 -m pip install --upgrade "phi-boundary-gate>=0.5,<0.6"
+```
+
+Production projects should use a compatible version range such as
+`phi-boundary-gate>=0.5,<0.6` and let Dependabot, Renovate, or a lockfile update
+workflow propose patch/minor updates through CI. Git tag installs remain a
+fallback for environments that cannot access PyPI, but they are no longer the
+primary consumption path.
 
 For `requirements.txt` and `pyproject.toml` examples, see
 [Install and Consume as a Package](docs/install.md). For release notes, see
@@ -247,6 +258,21 @@ safe_text = decision.redacted_text
 [Library API](docs/library-api.md) for the typed `ScanFinding` and
 `GuardDecision` shapes.
 
+Projects that initialize `.phi-boundary-gate/config.json` can use the SDK facade:
+
+```python
+from phi_boundary_gate import PhiBoundaryGate
+
+gate = PhiBoundaryGate.from_project()
+decision = gate.guard_model_input("member_id=MBR-SYN-8842")
+
+if decision.should_block:
+    raise RuntimeError(decision.recommended_action)
+
+safe_log_text = gate.redact_for_log("debug member_id=MBR-SYN-8842")
+audit_payload = decision.to_safe_dict()
+```
+
 ## Compliance Guard
 
 Projects that route PHI to covered services can run the compliance guard before
@@ -300,13 +326,19 @@ See [Compliance Guard](docs/compliance-guard.md) and
 
 ## Development
 
+Set up a local development environment:
+
+```bash
+python3 -m pip install -e ".[dev]"
+```
+
 Run the tests:
 
 ```bash
 PYTHONPATH=src python3 -m unittest discover -s tests
 ```
 
-Current release: `v0.4.0`.
+Current release: `v0.5.0`.
 
 ## Limits
 

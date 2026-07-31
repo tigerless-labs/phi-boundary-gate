@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.5.0 - 2026-07-31
+
+- Added the `PhiBoundaryGate` SDK facade for project-based policy loading, model-input guards, and log redaction.
+- Added `.phi-boundary-gate/config.json` project discovery plus `phi-boundary-gate init` and `check-config` commands.
+- Added package templates for starter PHI and compliance policies so PyPI installs can bootstrap consuming projects.
+- Added `GuardDecision.to_safe_dict()` for audit/log serialization that omits raw input text and raw finding values.
+- Exported trace, report, redacted-trace, project-config, and SDK helpers from the top-level package API.
+- Added `py.typed`, PyPI-friendly metadata, dev extras, Makefile shortcuts, distribution builds, and package-data smoke checks.
+- Added a GitHub Actions publishing workflow for TestPyPI/PyPI Trusted Publishing.
+- Updated install and release docs to make PyPI version ranges the primary dependency path and Git tag installs a fallback.
+
 ## 0.4.0 - 2026-07-29
 
 - Renamed the project, package, CLI, and Python import path to PHI Boundary Gate.

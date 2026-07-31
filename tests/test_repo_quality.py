@@ -9,7 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from phi_boundary_gate import __version__  # noqa: E402
+from phi_boundary_gate import PhiBoundaryGate, __version__, build_report, load_trace, redacted_trace_events  # noqa: E402
 from phi_boundary_gate.detectors import RULES, detect_candidates  # noqa: E402
 from phi_boundary_gate.policy import load_policy  # noqa: E402
 
@@ -66,6 +66,19 @@ class RepoQualityTest(unittest.TestCase):
     def test_presidio_failure_message_points_to_optional_extra(self) -> None:
         with self.assertRaisesRegex(ValueError, r"pip install -e '\.\[ner\]'"):
             detect_candidates("No PHI here.", enable_presidio=True)
+
+    def test_public_sdk_api_exports_are_available(self) -> None:
+        self.assertEqual(PhiBoundaryGate.__name__, "PhiBoundaryGate")
+        self.assertEqual(build_report.__name__, "build_report")
+        self.assertEqual(load_trace.__name__, "load_trace")
+        self.assertEqual(redacted_trace_events.__name__, "redacted_trace_events")
+
+    def test_package_includes_typed_marker_and_project_templates(self) -> None:
+        package_root = ROOT / "src/phi_boundary_gate"
+
+        self.assertTrue((package_root / "py.typed").is_file())
+        self.assertTrue((package_root / "templates/phi-policy.yml").is_file())
+        self.assertTrue((package_root / "templates/phi-compliance-policy.yml").is_file())
 
 
 if __name__ == "__main__":

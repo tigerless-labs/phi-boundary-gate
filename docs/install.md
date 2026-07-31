@@ -1,33 +1,114 @@
 # Install and Consume as a Package
 
-This project is a Python package. Other projects should import it through normal package installation, not by copying source files.
+This project is a Python package. Other projects should import it through normal
+package installation, not by copying source files.
+
+## PyPI Install
+
+Use PyPI for normal consumption:
+
+```bash
+python3 -m pip install "phi-boundary-gate>=0.5,<0.6"
+```
+
+For `requirements.txt`:
+
+```text
+phi-boundary-gate>=0.5,<0.6
+```
+
+For `pyproject.toml`:
+
+```toml
+[project]
+dependencies = [
+  "phi-boundary-gate>=0.5,<0.6",
+]
+```
+
+Use a compatible range instead of an exact pin in application manifests. Lock the
+resolved version in the consuming project's lockfile or deployment artifact, then
+let Dependabot, Renovate, or an equivalent dependency-update workflow propose
+upgrades through CI.
+
+## Optional Local NER Install
+
+The default install uses only bundled deterministic regex rules. To enable local
+Presidio-assisted NER detection, install the optional `ner` extra and a spaCy
+English model in the consuming environment:
+
+```bash
+python3 -m pip install "phi-boundary-gate[ner]>=0.5,<0.6"
+python3 -m spacy download en_core_web_lg
+```
+
+Then pass `--enable-presidio` on the CLI, or `enable_presidio=True` to
+`scan_text`, `guard_text`, `build_report`, or `guard_compliance`.
+
+## Project Bootstrap
+
+Create starter policy files in a consuming project:
+
+```bash
+phi-boundary-gate init
+phi-boundary-gate check-config
+```
+
+This writes:
+
+```text
+.phi-boundary-gate/config.json
+config/phi-policy.yml
+config/phi-compliance-policy.yml
+```
+
+The starter files are schema examples. Review and replace service, BAA, logging,
+storage, and model facts with organization-approved values before using them with
+real PHI.
+
+Then use the SDK facade:
+
+```python
+from phi_boundary_gate import PhiBoundaryGate
+
+gate = PhiBoundaryGate.from_project()
+decision = gate.guard_model_input("member_id=MBR-SYN-8842")
+safe_log_text = gate.redact_for_log("debug member_id=MBR-SYN-8842")
+audit_payload = decision.to_safe_dict()
+```
 
 ## Local Editable Install
 
-Use this when developing this package beside another local project.
+Use this when developing this package beside another local project:
 
 ```bash
 python3 -m pip install -e /home/frank/code/phi-boundary-gate
 ```
 
-Then import the package:
+For package development, include developer tooling:
 
-```python
-from phi_boundary_gate import guard_text, load_policy
+```bash
+python3 -m pip install -e ".[dev]"
 ```
 
-Editable install is best for local integration because changes in this repository are visible immediately to the calling project's Python environment.
+Editable install is best for local integration because changes in this repository
+are visible immediately to the calling project's Python environment.
 
-The consuming project still needs its own policy files. The `samples/` directory
-is part of this repository's examples, not installed package data.
+## Git Tag Fallback
 
-## Git Tag Install
-
-Use this when another project needs a reproducible dependency without a private package registry.
+Use a Git tag only when another project cannot access PyPI or the chosen private
+package index:
 
 ```bash
 python3 -m pip install \
-  "phi-boundary-gate @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.4.0"
+  "phi-boundary-gate @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.5.0"
+```
+
+The NER extra works with the same fallback:
+
+```bash
+python3 -m pip install \
+  "phi-boundary-gate[ner] @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.5.0"
 ```
 
 For short-term testing, a commit SHA is also valid:
@@ -39,118 +120,34 @@ python3 -m pip install \
 
 Do not use `@main` for production or serious integration. It is not reproducible.
 
-## requirements.txt
+## Publishing
 
-```text
-phi-boundary-gate @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.4.0
-```
+Release publishing uses GitHub Actions and PyPI Trusted Publishing:
 
-Install from the consuming project:
-
-```bash
-python3 -m pip install -r requirements.txt
-```
-
-## pyproject.toml
-
-```toml
-[project]
-dependencies = [
-  "phi-boundary-gate @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.4.0",
-]
-```
-
-## Optional Local NER Install
-
-The default install uses only bundled deterministic regex rules. To enable local
-Presidio-assisted NER detection, install the optional `ner` extra and a spaCy
-English model in the consuming environment:
+1. Configure a pending trusted publisher on TestPyPI for project
+   `phi-boundary-gate`, repository `tigerless-labs/phi-boundary-gate`, workflow
+   `.github/workflows/publish.yml`, environment `testpypi`.
+2. Configure a pending trusted publisher on PyPI with the same repository and
+   workflow, environment `pypi`.
+3. Require manual approval for the `pypi` GitHub Environment.
+4. Merge the release PR to `main`; the publish workflow builds distributions and
+   publishes to TestPyPI.
+5. Create and push the release tag:
 
 ```bash
-python3 -m pip install \
-  "phi-boundary-gate[ner] @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.4.0"
-python3 -m spacy download en_core_web_lg
+git tag v0.5.0
+git push origin v0.5.0
 ```
 
-Then pass `--enable-presidio` on the CLI, or `enable_presidio=True` to
-`scan_text`, `guard_text`, `build_report`, or `guard_compliance`.
-
-## Updating the Dependency
-
-For compatible changes:
-
-1. Merge the PHI package changes to `main`.
-2. Bump `pyproject.toml` and `src/phi_boundary_gate/__init__.py`.
-3. Create and push a new tag.
-4. Update consuming projects to the new tag.
-
-Example for a new release:
-
-```bash
-git tag v<new-version>
-git push origin v<new-version>
-```
-
-Then update the consuming project:
-
-```text
-phi-boundary-gate @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v<new-version>
-```
-
-Use patch versions for compatible fixes. Use a minor version for new public API additions or behavior changes while the package is still pre-1.0.
-
-## Release Checklist for v0.4.0
-
-Before tagging:
-
-```bash
-PYTHONPATH=src python3 -m unittest discover -s tests
-PYTHONPATH=src python3 -m compileall -q src tests
-PYTHONPATH=src python3 -m phi_boundary_gate.cli \
-  --trace samples/traces/claim_agent_minimal.jsonl \
-  --policy samples/policies/default.yml \
-  --out reports/sample-report.md \
-  --json reports/sample-report.json \
-  --redacted-trace reports/sample-redacted-trace.jsonl
-PYTHONPATH=src python3 -m phi_boundary_gate.cli \
-  --trace samples/traces/expanded_phi_variants.jsonl \
-  --policy samples/policies/default.yml \
-  --out /tmp/expanded-report.md \
-  --json /tmp/expanded-report.json
-PYTHONPATH=src python3 tools/trace_corpus_report.py \
-  --traces samples/traces \
-  --expectations samples/trace_expectations \
-  --policy samples/policies/default.yml \
-  --out /tmp/trace-corpus-coverage.json
-diff -u reports/trace-corpus-coverage.json /tmp/trace-corpus-coverage.json
-python3 -m pip install --no-build-isolation --no-deps --target /tmp/phi-package-smoke-v040 .
-PYTHONPATH=/tmp/phi-package-smoke-v040 python3 -c "from phi_boundary_gate import __version__, guard_text, guard_compliance; print(__version__, guard_text.__name__, guard_compliance.__name__)"
-PYTHONPATH=/tmp/phi-package-smoke-v040 python3 -m phi_boundary_gate.cli --help
-```
-
-After the checks pass:
-
-```bash
-git tag v0.4.0
-git push origin v0.4.0
-```
-
-## Future Artifact Registry Route
-
-When infrastructure permissions are ready, publish this package to a private Python registry such as Google Artifact Registry.
-
-Expected consuming-project dependency after that migration:
-
-```text
-phi-boundary-gate==0.4.0
-```
-
-The versioning workflow should stay the same. Only the package source changes from Git URL to a private package index.
+The tag workflow publishes the same built package shape to PyPI.
 
 ## Notes
 
-- Calling projects still need GitHub SSH access when installing from a Git URL.
-- Calling projects must provide their own PHI policy YAML, and their own compliance policy YAML if they use `guard_compliance`.
-- This package reports PHI candidates, redacts according to policy, and can enforce organization-supplied BAA/provider eligibility policy. It does not discover contract status automatically.
-- Do not commit real PHI, real traces, real logs, or real reports to this repository or consuming projects.
+- Calling projects must provide their own PHI policy YAML, and their own
+  compliance policy YAML if they use `guard_compliance`.
+- This package reports PHI candidates, redacts according to policy, and can
+  enforce organization-supplied BAA/provider eligibility policy. It does not
+  discover contract status automatically.
+- Do not commit real PHI, real traces, real logs, or real reports to this
+  repository or consuming projects.
 - License: MIT. See [LICENSE](../LICENSE).
