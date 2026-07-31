@@ -15,6 +15,34 @@ policy = load_policy(Path("config/phi-policy.yml"))
 The consuming project owns this policy file. The sample policies in this
 repository are examples to copy and adapt; they are not installed as package data.
 
+## Project SDK Facade
+
+For application integration, initialize the consuming project once:
+
+```bash
+phi-boundary-gate init
+phi-boundary-gate check-config
+```
+
+Then load the project config through the SDK facade:
+
+```python
+from phi_boundary_gate import PhiBoundaryGate
+
+gate = PhiBoundaryGate.from_project()
+
+decision = gate.guard_model_input("member_id=MBR-SYN-8842")
+if decision.should_block:
+    raise RuntimeError(decision.recommended_action)
+
+safe_log_text = gate.redact_for_log("debug member_id=MBR-SYN-8842")
+audit_payload = decision.to_safe_dict()
+```
+
+`from_project()` discovers `.phi-boundary-gate/config.json` by walking upward
+from the current working directory. The config points to the consuming project's
+PHI policy and optional compliance policy.
+
 ## Scan Only
 
 ```python
@@ -77,10 +105,15 @@ if decision.should_block:
     raise RuntimeError(decision.recommended_action)
 
 model_text = decision.redacted_text if decision.should_redact else decision.text
-payload = decision.to_dict()
+payload = decision.to_safe_dict()
 ```
 
 `guard_text` handles PHI detection and layer policy only. Use `guard_compliance` when a project also needs to enforce BAA, covered service, model, feature, logging, and storage eligibility.
+
+`GuardDecision.to_dict()` preserves the original detailed shape and includes the
+raw input text and raw finding values. Use it only where raw PHI handling is
+approved. Use `to_safe_dict()` for audit logs, application logs, and routine
+telemetry.
 
 ## Guard Before Covered Service Calls
 
@@ -141,6 +174,17 @@ From this repository root:
 
 ```bash
 PYTHONPATH=src python3 -m phi_boundary_gate.cli \
+  --trace samples/traces/claim_agent_minimal.jsonl \
+  --policy samples/policies/default.yml \
+  --out reports/sample-report.md \
+  --json reports/sample-report.json \
+  --redacted-trace reports/sample-redacted-trace.jsonl
+```
+
+The equivalent subcommand form is:
+
+```bash
+PYTHONPATH=src python3 -m phi_boundary_gate.cli scan-trace \
   --trace samples/traces/claim_agent_minimal.jsonl \
   --policy samples/policies/default.yml \
   --out reports/sample-report.md \

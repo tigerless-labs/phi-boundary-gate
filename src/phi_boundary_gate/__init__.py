@@ -1,6 +1,6 @@
 """PHI boundary gating, redaction, and audit reporting."""
 
-__version__ = "0.4.0"
+__version__ = "0.5.0"
 
 from .api import GuardDecision, GuardMode, ScanFinding, guard_text, redact_text, scan_text
 from .compliance import (
@@ -12,6 +12,11 @@ from .compliance import (
     load_compliance_policy,
 )
 from .policy import load_policy
+from .project import ProjectConfig, check_project_config, discover_project_config, init_project, load_project_config
+from .redacted_trace import redacted_trace_events, write_redacted_trace
+from .report import build_report, render_markdown, write_json_report, write_markdown_report
+from .sdk import PhiBoundaryGate
+from .trace import TraceEvent, load_trace
 
 __all__ = [
     "ComplianceContext",
@@ -19,12 +24,26 @@ __all__ = [
     "CompliancePolicy",
     "GuardDecision",
     "GuardMode",
+    "PhiBoundaryGate",
+    "ProjectConfig",
     "ScanFinding",
     "ServiceProfile",
+    "TraceEvent",
+    "build_report",
+    "check_project_config",
+    "discover_project_config",
     "guard_compliance",
     "guard_text",
+    "init_project",
     "load_compliance_policy",
     "load_policy",
+    "load_project_config",
+    "load_trace",
     "redact_text",
+    "redacted_trace_events",
+    "render_markdown",
     "scan_text",
+    "write_json_report",
+    "write_markdown_report",
+    "write_redacted_trace",
 ]

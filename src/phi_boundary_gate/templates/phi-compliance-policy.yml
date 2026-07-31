@@ -1,0 +1,69 @@
+version: 1
+default_action: block
+
+phi_statuses:
+  non_phi:
+    requires_baa: false
+  synthetic:
+    requires_baa: false
+  deidentified:
+    requires_baa: true
+  real_phi:
+    requires_baa: true
+
+environments:
+  development:
+    require_redacted_logging: false
+    require_audit: false
+  production:
+    require_redacted_logging: true
+    require_audit: true
+
+services:
+  example_baa_confirmed_service:
+    vendor: example
+    service: covered_ai_service
+    covered_service: true
+    baa_executed: true
+    allowed_phi_status:
+      - non_phi
+      - synthetic
+      - deidentified
+      - real_phi
+    model_patterns:
+      - approved-model-*
+    denied_model_patterns:
+      - "*preview*"
+      - "*experimental*"
+      - "*beta*"
+    allowed_features:
+      - online_prediction
+    denied_features:
+      - web_search
+      - external_tools
+    allowed_logging:
+      - metadata_only
+      - redacted_only
+    allowed_storage:
+      - none
+      - encrypted_controlled
+    allow_preview: false
+    notes: Replace this profile with organization-approved BAA and service facts.
+
+  example_not_approved_service:
+    vendor: example
+    service: consumer_ai_service
+    covered_service: false
+    baa_executed: false
+    allowed_phi_status:
+      - non_phi
+      - synthetic
+    model_patterns:
+      - "*"
+    allowed_features:
+      - online_prediction
+    allowed_logging:
+      - metadata_only
+    allowed_storage:
+      - none
+    deny_reason: This example profile is not approved for real PHI.

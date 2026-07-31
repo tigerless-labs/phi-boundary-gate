@@ -84,6 +84,22 @@ class GuardDecision:
             "should_redact": self.should_redact,
         }
 
+    def to_safe_dict(self) -> dict[str, Any]:
+        return {
+            "layer": self.layer,
+            "mode": self.mode,
+            "finding_count": len(self.findings),
+            "categories": sorted({finding.category for finding in self.findings}),
+            "has_phi": self.has_phi,
+            "has_redactions": self.has_redactions,
+            "has_violations": self.has_violations,
+            "worst_disposition": self.worst_disposition,
+            "recommended_action": self.recommended_action,
+            "should_block": self.should_block,
+            "should_redact": self.should_redact,
+            "redacted_text": self.redacted_text,
+        }
+
 
 def scan_text(text: str, layer: str, policy: Policy, *, enable_presidio: bool = False) -> list[ScanFinding]:
     if layer not in SUPPORTED_LAYERS:
