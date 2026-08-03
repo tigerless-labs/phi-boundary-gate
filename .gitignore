@@ -9,6 +9,14 @@ dist/
 .vscode/
 .idea/
 
+# Local collaboration and release notes
+CLAUDE.md
+CHANGELOG.md
+DEMO-SCRIPT.md
+brief intro.docx
+docs/TODO.md
+docs/plans/
+
 # Local/generated outputs
 reports/*.md
 reports/*.json

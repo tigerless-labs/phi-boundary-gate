@@ -13,14 +13,12 @@ VERSION_RE = re.compile(r"^\d+\.\d+\.\d+$")
 INIT_VERSION_RE = re.compile(r'^__version__ = "([^"]+)"$', re.M)
 README_BADGE_RE = re.compile(r"badge/release-v(\d+\.\d+\.\d+)-")
 INSTALL_TAG_RE = re.compile(r"phi-boundary-gate(?:\[ner\])? @ .*?@v(\d+\.\d+\.\d+)")
-CHANGELOG_TOP_RE = re.compile(r"^## (\d+\.\d+\.\d+) - ", re.M)
 
 VERSION_FILES = (
     "pyproject.toml",
     "src/phi_boundary_gate/__init__.py",
     "README.md",
     "docs/install.md",
-    "CHANGELOG.md",
 )
 SHIPPED_SURFACE_PREFIXES = (
     "src/",
@@ -29,7 +27,6 @@ SHIPPED_SURFACE_PREFIXES = (
     "reports/trace-corpus-coverage.json",
     "tools/",
     "README.md",
-    "CHANGELOG.md",
     "pyproject.toml",
 )
 
@@ -75,13 +72,6 @@ def read_install_versions(repo_root: Path) -> list[str]:
     return versions
 
 
-def read_changelog_top_version(repo_root: Path) -> str:
-    match = CHANGELOG_TOP_RE.search(read_text(repo_root, "CHANGELOG.md"))
-    if not match:
-        raise VersionProblem("CHANGELOG.md has no top release entry")
-    return match.group(1)
-
-
 def assert_semver(version: str, source: str) -> None:
     if not VERSION_RE.match(version):
         raise VersionProblem(f"{source} version {version!r} is not MAJOR.MINOR.PATCH")
@@ -92,7 +82,6 @@ def collect_version_copies(repo_root: Path) -> dict[str, str]:
         "pyproject.toml": read_pyproject_version(repo_root),
         "__init__.__version__": read_init_version(repo_root),
         "README.md badge": read_readme_badge_version(repo_root),
-        "CHANGELOG.md top entry": read_changelog_top_version(repo_root),
     }
     install_versions = read_install_versions(repo_root)
     for index, version in enumerate(install_versions, start=1):

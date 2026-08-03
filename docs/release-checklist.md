@@ -19,7 +19,7 @@ Configure PyPI Trusted Publishing before the first release:
 
 Trusted Publishing avoids long-lived PyPI API tokens in GitHub Secrets.
 
-## v0.5.0
+## v0.5.1
 
 Before merging a release PR:
 
@@ -49,18 +49,18 @@ diff -u reports/trace-corpus-coverage.json /tmp/trace-corpus-coverage.json
 python3 .github/scripts/check_release_version.py --skip-bump-check
 python3 -m build
 python3 -m twine check dist/*
-python3 -m pip install --no-build-isolation --no-deps --target /tmp/phi-package-smoke-v050 .
-test -f /tmp/phi-package-smoke-v050/phi_boundary_gate/py.typed
-test -f /tmp/phi-package-smoke-v050/phi_boundary_gate/templates/phi-policy.yml
-PYTHONPATH=/tmp/phi-package-smoke-v050 python3 -c "from phi_boundary_gate import __version__, PhiBoundaryGate, guard_text, guard_compliance; print(__version__, PhiBoundaryGate.__name__, guard_text.__name__, guard_compliance.__name__)"
-PYTHONPATH=/tmp/phi-package-smoke-v050 python3 -m phi_boundary_gate.cli --help
+python3 -m pip install --no-build-isolation --no-deps --target /tmp/phi-package-smoke-v051 .
+test -f /tmp/phi-package-smoke-v051/phi_boundary_gate/py.typed
+test -f /tmp/phi-package-smoke-v051/phi_boundary_gate/templates/phi-policy.yml
+PYTHONPATH=/tmp/phi-package-smoke-v051 python3 -c "from phi_boundary_gate import __version__, PhiBoundaryGate, guard_text, guard_compliance; print(__version__, PhiBoundaryGate.__name__, guard_text.__name__, guard_compliance.__name__)"
+PYTHONPATH=/tmp/phi-package-smoke-v051 python3 -m phi_boundary_gate.cli --help
 ```
 
 After checks pass on `main` and TestPyPI publishing succeeds:
 
 ```bash
-git tag v0.5.0
-git push origin v0.5.0
+git tag v0.5.1
+git push origin v0.5.1
 ```
 
 Downstream projects should prefer the PyPI package:
@@ -72,7 +72,7 @@ phi-boundary-gate>=0.5,<0.6
 Git tag fallback remains available when a package index cannot be used:
 
 ```text
-phi-boundary-gate @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.5.0
+phi-boundary-gate @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.5.1
 ```
 
 ## Notes
