@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "phi-boundary-gate"
-version = "0.5.0"
+version = "0.5.1"
 description = "Synthetic PHI boundary gating, redaction, and audit reporting toolkit."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -40,7 +40,6 @@ dependencies = ["PyYAML>=6.0"]
 Homepage = "https://github.com/tigerless-labs/phi-boundary-gate"
 Repository = "https://github.com/tigerless-labs/phi-boundary-gate"
 Issues = "https://github.com/tigerless-labs/phi-boundary-gate/issues"
-Changelog = "https://github.com/tigerless-labs/phi-boundary-gate/blob/main/CHANGELOG.md"
 Documentation = "https://github.com/tigerless-labs/phi-boundary-gate/tree/main/docs"
 
 [project.optional-dependencies]

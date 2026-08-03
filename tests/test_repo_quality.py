@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 import sys
 import tomllib
 import unittest
@@ -16,7 +15,6 @@ from phi_boundary_gate.policy import load_policy  # noqa: E402
 
 README = ROOT / "README.md"
 INSTALL_DOC = ROOT / "docs/install.md"
-CHANGELOG = ROOT / "CHANGELOG.md"
 SAMPLE_POLICY = ROOT / "samples/policies/default.yml"
 
 
@@ -25,12 +23,10 @@ class RepoQualityTest(unittest.TestCase):
         metadata = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
         readme = README.read_text(encoding="utf-8")
         install = INSTALL_DOC.read_text(encoding="utf-8")
-        changelog = CHANGELOG.read_text(encoding="utf-8")
 
         self.assertEqual(metadata["project"]["version"], __version__)
         self.assertIn(f"release-v{__version__}", readme)
         self.assertIn(f"@v{__version__}", install)
-        self.assertRegex(changelog, rf"(?m)^## {re.escape(__version__)} - ")
 
     def test_readme_keeps_badges_on_one_source_line(self) -> None:
         text = README.read_text(encoding="utf-8")

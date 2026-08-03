@@ -31,10 +31,6 @@ def write_release_files(repo: Path, version: str) -> None:
         f'phi-boundary-gate @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v{version}\n',
         encoding="utf-8",
     )
-    (repo / "CHANGELOG.md").write_text(
-        f"# Changelog\n\n## {version} - 2026-07-28\n\n- Test release.\n",
-        encoding="utf-8",
-    )
 
 
 class ReleaseVersionGuardTest(unittest.TestCase):

@@ -1,22 +1,16 @@
 # Documentation Index
 
-- [TODO](TODO.md) — 未排期事项、风险和后续补充项。
-- [Initial thin slice plan](plans/mvp-thin-slice.md) — 初版可运行端到端切片计划。
-- [Trace schema](trace-schema.md) — JSONL trace事件格式。
-- [Trace corpus](trace-corpus.md) — synthetic trace覆盖矩阵、expectation契约和已知缺口。
-- [Policy schema](policy-schema.md) — YAML policy策略格式。
-- [Detector roadmap](detector-roadmap.md) — detector当前基线、弱点和短期路线。
-- [Compliance policy schema](compliance-policy-schema.md) — BAA、covered service、模型和日志约束配置格式。
-- [Report format](report-format.md) — Markdown和JSON报告格式。
-- [Install and consume](install.md) — 本地editable安装、Git tag依赖和未来私有包路线。
-- [Release checklist](release-checklist.md) — Git tag发布前验证和下游固定版本接入步骤。
-- [Library API](library-api.md) — 可嵌入的scan/redact/guard API。
-- [Compliance guard](compliance-guard.md) — 可嵌入的PHI服务资格事前拦截API。
-- [Validation notes](validation-notes.md) — trace和policy输入校验行为。
-- [Boundary exposure summary plan](plans/summarize-boundary-exposures.md) — PHI边界暴露摘要迭代计划。
-- [Policy-driven redaction API plan](plans/policy-driven-phi-redaction-api.md) — 可复用PHI脱敏API迭代计划。
-- [Stabilize redaction library API plan](plans/stabilize-redaction-library-api.md) — typed API收口迭代计划。
-- [PHI compliance eligibility guard plan](plans/phi-compliance-eligibility-guard.md) — BAA和服务资格guard迭代计划。
+- [Install and consume](install.md) - PyPI installation, local editable installs, Git tag fallback, and release publishing.
+- [Library API](library-api.md) - Embeddable scan, redact, guard, and project SDK APIs.
+- [Compliance guard](compliance-guard.md) - Service eligibility checks for PHI-bearing provider calls.
+- [Trace schema](trace-schema.md) - JSONL trace event format.
+- [Trace corpus](trace-corpus.md) - Synthetic trace coverage, expectation contracts, and known gaps.
+- [Policy schema](policy-schema.md) - YAML PHI policy format.
+- [Compliance policy schema](compliance-policy-schema.md) - BAA, covered service, model, feature, logging, and storage policy format.
+- [Report format](report-format.md) - Markdown and JSON audit report format.
+- [Detector roadmap](detector-roadmap.md) - Detector baseline, gaps, and roadmap.
+- [Validation notes](validation-notes.md) - Trace and policy validation behavior.
+- [Release checklist](release-checklist.md) - Release validation, PyPI publishing, and downstream dependency guidance.
 
 Planned future docs:
 
