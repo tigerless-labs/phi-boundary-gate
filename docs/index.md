@@ -3,6 +3,7 @@
 - [Install and consume](install.md) - PyPI installation, local editable installs, Git tag fallback, and release publishing.
 - [Library API](library-api.md) - Embeddable scan, redact, guard, and project SDK APIs.
 - [Compliance guard](compliance-guard.md) - Service eligibility checks for PHI-bearing provider calls.
+- [Trace adapters](adapters.md) - Mapping v1 for normalizing external agent JSONL traces.
 - [Trace schema](trace-schema.md) - JSONL trace event format.
 - [Trace corpus](trace-corpus.md) - Synthetic trace coverage, expectation contracts, and known gaps.
 - [Policy schema](policy-schema.md) - YAML PHI policy format.

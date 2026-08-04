@@ -1,0 +1,83 @@
+version: 1
+event_id:
+  field: id
+  fallback: external_evt
+timestamp:
+  field: created_at
+layer:
+  field: event_type
+  map:
+    human_message: user_message
+    retrieval_chunk: rag_context
+    tool_result: tool_output
+    prompt_assembled: model_input
+    memory_write: memory
+    debug_log: debug_log
+content:
+  fields:
+    - field: messages.0.content
+      label: user_message
+      required: false
+    - field: retrieval.chunk_text
+      label: rag_context
+      required: false
+    - field: tool.response.summary
+      label: tool_summary
+      required: false
+    - field: tool.response.member_id
+      label: member_id
+      required: false
+    - field: tool.response.claim_id
+      label: claim_id
+      required: false
+    - field: tool.response.address
+      label: address
+      required: false
+    - field: prompt.system
+      label: system_prompt
+      required: false
+    - field: prompt.user
+      label: user_prompt
+      required: false
+    - field: memory.value
+      label: memory
+      required: false
+    - field: log.message
+      label: debug_log
+      required: false
+source:
+  type:
+    field: agent.name
+    default: generic_agent
+    required: false
+  path:
+    field: agent.node
+    default: unknown_node
+    required: false
+destinations:
+  - layer:
+      field: routing.next_layer
+      required: false
+      map:
+        prompt: model_input
+    path:
+      field: routing.next_path
+      required: false
+  - layer:
+      field: provider.sink
+      required: false
+    path:
+      field: provider.request_path
+      required: false
+metadata:
+  include:
+    - run_id
+    - conversation_id
+    - field: agent.node
+      name: agent_node
+      required: false
+    - field: tool.name
+      name: tool_name
+      required: false
+  constants:
+    adapter: generic_agent_mapping_v1

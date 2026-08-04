@@ -168,6 +168,30 @@ For an agent runtime, call `guard_text` around trace and log boundaries such as 
 
 For CI or offline audit, keep `mode="report_only"` and use the CLI report outputs.
 
+## External Trace Conversion
+
+External agent logs can be normalized through mapping v1 before scanning:
+
+```python
+from pathlib import Path
+
+from phi_boundary_gate import load_external_trace, write_converted_trace
+
+events = load_external_trace(
+    Path("raw-agent-events.jsonl"),
+    Path("config/phi-trace-map.yml"),
+)
+
+write_converted_trace(
+    Path("raw-agent-events.jsonl"),
+    Path("config/phi-trace-map.yml"),
+    Path("/tmp/phi-normalized-trace.jsonl"),
+)
+```
+
+The returned `TraceEvent` objects use the same shape as `load_trace()`. See
+[Trace Adapters](adapters.md) for the mapping schema and CLI flow.
+
 ## CLI Redacted Trace
 
 From this repository root:

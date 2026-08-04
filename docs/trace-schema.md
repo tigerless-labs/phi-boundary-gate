@@ -1,6 +1,7 @@
 # Trace Schema
 
-The CLI reads newline-delimited JSON. Each line is one synthetic context event.
+The CLI reads newline-delimited JSON. Each line is one context event. External
+agent logs can be normalized into this schema with `convert-trace`.
 
 ## Event Object
 
@@ -52,3 +53,9 @@ When present, `layer` must be one of the supported layers and `path` must be a s
 ## Validation Notes
 
 The CLI validates only the fields required to produce a report. Additional fields are preserved as trace metadata but are not interpreted.
+
+Validate a normalized trace without scanning it:
+
+```bash
+phi-boundary-gate validate-trace --trace normalized-trace.jsonl
+```
