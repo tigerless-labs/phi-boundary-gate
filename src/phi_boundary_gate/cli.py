@@ -1,16 +1,18 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
+from .adapters import load_external_trace, write_converted_trace
 from .policy import load_policy
 from .project import check_project_config, init_project
 from .redacted_trace import write_redacted_trace
 from .report import build_report, write_json_report, write_markdown_report
-from .trace import load_trace
+from .trace import TraceEvent, load_trace, trace_event_to_dict
 
-COMMANDS = {"init", "check-config", "scan-trace"}
+COMMANDS = {"init", "check-config", "convert-trace", "scan-trace", "validate-trace"}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -30,14 +32,28 @@ def main(argv: list[str] | None = None) -> int:
     check_parser = subparsers.add_parser("check-config", help="Validate discovered project config and policies.")
     check_parser.add_argument("--root", type=Path, default=Path.cwd(), help="Start directory for config discovery.")
 
+    convert_parser = subparsers.add_parser("convert-trace", help="Normalize an external JSONL trace.")
+    convert_parser.add_argument("--input", required=True, type=Path, help="Path to the external JSONL trace.")
+    convert_parser.add_argument("--mapping", required=True, type=Path, help="Path to a mapping v1 YAML file.")
+    output_group = convert_parser.add_mutually_exclusive_group(required=True)
+    output_group.add_argument("--out", type=Path, help="Path for the normalized PHI Boundary Gate JSONL trace.")
+    output_group.add_argument("--stdout", action="store_true", help="Write normalized JSONL to stdout.")
+
     scan_parser = subparsers.add_parser("scan-trace", help="Scan a JSONL trace and write audit outputs.")
     _add_scan_trace_args(scan_parser)
+
+    validate_parser = subparsers.add_parser("validate-trace", help="Validate a PHI Boundary Gate JSONL trace.")
+    validate_parser.add_argument("--trace", required=True, type=Path, help="Path to the normalized JSONL trace.")
 
     args = parser.parse_args(args_list)
     if args.command == "init":
         return _init(args)
     if args.command == "check-config":
         return _check_config(args)
+    if args.command == "convert-trace":
+        return _convert_trace(args)
+    if args.command == "validate-trace":
+        return _validate_trace(args)
     return _scan_trace_from_args(args)
 
 
@@ -90,6 +106,56 @@ def _scan_trace_from_args(args: argparse.Namespace) -> int:
         )
     )
     return 0
+
+
+def _convert_trace(args: argparse.Namespace) -> int:
+    try:
+        if args.stdout:
+            events = load_external_trace(args.input, args.mapping)
+            _write_trace_stdout(events)
+        else:
+            events = write_converted_trace(args.input, args.mapping, args.out)
+    except (OSError, ValueError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+
+    if args.stdout:
+        print(f"Converted {len(events)} normalized event(s).", file=sys.stderr)
+    else:
+        print(f"Wrote {len(events)} normalized event(s): {args.out}")
+    return 0
+
+
+def _validate_trace(args: argparse.Namespace) -> int:
+    try:
+        events = load_trace(args.trace)
+    except (OSError, ValueError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    if not events:
+        print(f"error: {args.trace}: trace has no events", file=sys.stderr)
+        return 2
+
+    layers = sorted({event.layer for event in events})
+    destination_layers = sorted(
+        {
+            str(destination["layer"])
+            for event in events
+            for destination in event.destinations
+            if "layer" in destination
+        }
+    )
+    print(f"Trace ok: {args.trace}")
+    print(f"Events: {len(events)}")
+    print(f"Layers: {', '.join(layers)}")
+    if destination_layers:
+        print(f"Destination layers: {', '.join(destination_layers)}")
+    return 0
+
+
+def _write_trace_stdout(events: list[TraceEvent]) -> None:
+    for event in events:
+        print(json.dumps(trace_event_to_dict(event), sort_keys=True))
 
 
 def _init(args: argparse.Namespace) -> int:

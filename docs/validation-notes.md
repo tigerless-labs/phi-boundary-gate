@@ -23,6 +23,21 @@ Optional object fields must have the expected shape:
 
 Empty lines in JSONL traces are ignored. Invalid JSON, missing required fields, unsupported layers, and malformed destination objects fail before report generation.
 
+Validate a trace without scanning:
+
+```bash
+phi-boundary-gate validate-trace --trace normalized-trace.jsonl
+```
+
+Normalize a generic external JSONL trace before validation:
+
+```bash
+phi-boundary-gate convert-trace \
+  --input raw-agent-events.jsonl \
+  --mapping config/phi-trace-map.yml \
+  --out normalized-trace.jsonl
+```
+
 ## Policy Validation
 
 The YAML policy must be an object with:

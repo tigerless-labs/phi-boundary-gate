@@ -8,7 +8,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from phi_boundary_gate import PhiBoundaryGate, __version__, build_report, load_trace, redacted_trace_events  # noqa: E402
+from phi_boundary_gate import (  # noqa: E402
+    PhiBoundaryGate,
+    __version__,
+    build_report,
+    load_external_trace,
+    load_trace,
+    redacted_trace_events,
+)
 from phi_boundary_gate.detectors import RULES, detect_candidates  # noqa: E402
 from phi_boundary_gate.policy import load_policy  # noqa: E402
 
@@ -66,6 +73,7 @@ class RepoQualityTest(unittest.TestCase):
     def test_public_sdk_api_exports_are_available(self) -> None:
         self.assertEqual(PhiBoundaryGate.__name__, "PhiBoundaryGate")
         self.assertEqual(build_report.__name__, "build_report")
+        self.assertEqual(load_external_trace.__name__, "load_external_trace")
         self.assertEqual(load_trace.__name__, "load_trace")
         self.assertEqual(redacted_trace_events.__name__, "redacted_trace_events")
 

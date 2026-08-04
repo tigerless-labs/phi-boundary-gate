@@ -77,6 +77,22 @@ safe_log_text = gate.redact_for_log("debug member_id=MBR-SYN-8842")
 audit_payload = decision.to_safe_dict()
 ```
 
+## External Trace Normalization
+
+Projects with their own agent event logs can normalize generic JSONL before
+scanning:
+
+```bash
+phi-boundary-gate convert-trace \
+  --input raw-agent-events.jsonl \
+  --mapping config/phi-trace-map.yml \
+  --out normalized-trace.jsonl
+
+phi-boundary-gate validate-trace --trace normalized-trace.jsonl
+```
+
+See [Trace Adapters](adapters.md) for mapping v1.
+
 ## Local Editable Install
 
 Use this when developing this package beside another local project:
@@ -101,14 +117,14 @@ package index:
 
 ```bash
 python3 -m pip install \
-  "phi-boundary-gate @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.5.1"
+  "phi-boundary-gate @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.5.2"
 ```
 
 The NER extra works with the same fallback:
 
 ```bash
 python3 -m pip install \
-  "phi-boundary-gate[ner] @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.5.1"
+  "phi-boundary-gate[ner] @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.5.2"
 ```
 
 For short-term testing, a commit SHA is also valid:
@@ -135,8 +151,8 @@ Release publishing uses GitHub Actions and PyPI Trusted Publishing:
 5. Create and push the release tag:
 
 ```bash
-git tag v0.5.1
-git push origin v0.5.1
+git tag v0.5.2
+git push origin v0.5.2
 ```
 
 The tag workflow publishes the same built package shape to PyPI.

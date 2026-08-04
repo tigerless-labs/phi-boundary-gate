@@ -37,6 +37,28 @@ class TraceEvent:
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
+def trace_event_to_dict(event: TraceEvent) -> dict[str, Any]:
+    row: dict[str, Any] = {
+        "event_id": event.event_id,
+        "timestamp": event.timestamp,
+        "layer": event.layer,
+        "content": event.content,
+    }
+    if event.source:
+        row["source"] = event.source
+    if event.destinations:
+        row["destinations"] = event.destinations
+    if event.metadata:
+        row["metadata"] = event.metadata
+    return row
+
+
+def write_trace(events: list[TraceEvent], path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    lines = [json.dumps(trace_event_to_dict(event), sort_keys=True) for event in events]
+    path.write_text("\n".join(lines) + ("\n" if lines else ""), encoding="utf-8")
+
+
 def load_trace(path: Path) -> list[TraceEvent]:
     events: list[TraceEvent] = []
     with path.open("r", encoding="utf-8") as handle:

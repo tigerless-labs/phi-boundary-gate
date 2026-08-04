@@ -1,7 +1,7 @@
 <h1 align="center">PHI Boundary Gate</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/release-v0.5.1-brightgreen.svg" alt="release v0.5.1" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
+  <img src="https://img.shields.io/badge/release-v0.5.2-brightgreen.svg" alt="release v0.5.2" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
 </p>
 
 **PHI Boundary Gate** detects, gates, redacts, and reports PHI candidate
@@ -23,6 +23,7 @@ calls when the configured PHI and compliance policy says the route is not allowe
 | **Boundary-first reports** | Groups repeated PHI candidates across trace events so you can see the path, not only the match. |
 | **Hybrid candidate detection** | Built-in regex rules cover common synthetic PHI variants; optional local Presidio detection can add NER-backed spans. |
 | **Trace corpus baseline** | Synthetic trace expectations cover boundary flow, near misses, free text, structured payloads, and provider-boundary paths. |
+| **External trace adapters** | Mapping v1 can normalize generic agent JSONL into the package trace schema before scanning. |
 | **Policy-driven redaction** | YAML policy decides whether each category is allowed, should be redacted, or is a violation in each layer. |
 | **Provider-call guard** | Checks organization-supplied BAA, covered service, model, feature, logging, and storage facts before PHI is sent. |
 | **Audit-safe by default** | Compliance decisions can be serialized without detected raw PHI values unless controlled debugging explicitly asks for them. |
@@ -38,6 +39,16 @@ files, not package data installed into another project.
 
 ```bash
 python3 -m pip install -e .
+phi-boundary-gate scan-trace \
+  --trace samples/traces/claim_agent_minimal.jsonl \
+  --policy samples/policies/default.yml \
+  --out reports/sample-report.md \
+  --json reports/sample-report.json
+```
+
+The legacy direct scan form is also preserved for compatibility:
+
+```bash
 phi-boundary-gate \
   --trace samples/traces/claim_agent_minimal.jsonl \
   --policy samples/policies/default.yml \
@@ -48,7 +59,7 @@ phi-boundary-gate \
 Run the same command without installing the package:
 
 ```bash
-PYTHONPATH=src python3 -m phi_boundary_gate.cli \
+PYTHONPATH=src python3 -m phi_boundary_gate.cli scan-trace \
   --trace samples/traces/claim_agent_minimal.jsonl \
   --policy samples/policies/default.yml \
   --out reports/sample-report.md \
@@ -81,7 +92,7 @@ python3 -m spacy download en_core_web_lg
 Then enable it explicitly:
 
 ```bash
-phi-boundary-gate \
+phi-boundary-gate scan-trace \
   --trace samples/traces/expanded_phi_variants.jsonl \
   --policy samples/policies/default.yml \
   --out reports/expanded-report.md \
@@ -126,6 +137,30 @@ primary consumption path.
 
 For `requirements.txt` and `pyproject.toml` examples, see
 [Install and Consume as a Package](docs/install.md).
+
+### Convert an external agent trace
+
+External agent logs usually need a thin normalization step before scanning. The
+experimental mapping v1 adapter converts generic JSONL into the package trace
+schema:
+
+```bash
+phi-boundary-gate convert-trace \
+  --input samples/external_traces/generic_agent_run.jsonl \
+  --mapping samples/trace_mappings/generic_agent.yml \
+  --out /tmp/phi-normalized-trace.jsonl
+
+phi-boundary-gate validate-trace --trace /tmp/phi-normalized-trace.jsonl
+
+phi-boundary-gate scan-trace \
+  --trace /tmp/phi-normalized-trace.jsonl \
+  --policy samples/policies/default.yml \
+  --out /tmp/phi-normalized-report.md \
+  --json /tmp/phi-normalized-report.json \
+  --redacted-trace /tmp/phi-normalized-redacted.jsonl
+```
+
+See [Trace Adapters](docs/adapters.md) for the mapping schema and safety notes.
 
 ## What It Reads
 
@@ -337,7 +372,7 @@ Run the tests:
 PYTHONPATH=src python3 -m unittest discover -s tests
 ```
 
-Current release: `v0.5.1`.
+Current release: `v0.5.2`.
 
 ## Limits
 
