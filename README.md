@@ -1,7 +1,7 @@
 <h1 align="center">PHI Boundary Gate</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/release-v0.5.2-brightgreen.svg" alt="release v0.5.2" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
+  <img src="https://img.shields.io/badge/release-v0.5.3-brightgreen.svg" alt="release v0.5.3" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
 </p>
 
 **PHI Boundary Gate** detects, gates, redacts, and reports PHI candidate
@@ -149,6 +149,9 @@ phi-boundary-gate convert-trace \
   --input samples/external_traces/generic_agent_run.jsonl \
   --mapping samples/trace_mappings/generic_agent.yml \
   --out /tmp/phi-normalized-trace.jsonl
+
+phi-boundary-gate validate-mapping \
+  --mapping samples/trace_mappings/generic_agent.yml
 
 phi-boundary-gate validate-trace --trace /tmp/phi-normalized-trace.jsonl
 
@@ -372,7 +375,7 @@ Run the tests:
 PYTHONPATH=src python3 -m unittest discover -s tests
 ```
 
-Current release: `v0.5.2`.
+Current release: `v0.5.3`.
 
 ## Limits
 

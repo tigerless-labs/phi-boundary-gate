@@ -51,8 +51,17 @@ jobs:
           python3 -m pip install --no-build-isolation --no-deps --target /tmp/phi-package-smoke .
           test -f /tmp/phi-package-smoke/phi_boundary_gate/py.typed
           test -f /tmp/phi-package-smoke/phi_boundary_gate/templates/phi-policy.yml
-          PYTHONPATH=/tmp/phi-package-smoke python3 -c "from phi_boundary_gate import __version__, PhiBoundaryGate, guard_text, guard_compliance; print(__version__, PhiBoundaryGate.__name__, guard_text.__name__, guard_compliance.__name__)"
+          PYTHONPATH=/tmp/phi-package-smoke python3 -c "from phi_boundary_gate import __version__, PhiBoundaryGate, guard_text, guard_compliance, load_external_trace, validate_trace_mapping; print(__version__, PhiBoundaryGate.__name__, guard_text.__name__, guard_compliance.__name__, load_external_trace.__name__, validate_trace_mapping.__name__)"
           PYTHONPATH=/tmp/phi-package-smoke python3 -m phi_boundary_gate.cli --help
+          PYTHONPATH=/tmp/phi-package-smoke python3 -m phi_boundary_gate.cli validate-mapping \
+            --mapping samples/trace_mappings/generic_agent.yml
+          PYTHONPATH=/tmp/phi-package-smoke python3 -m phi_boundary_gate.cli convert-trace \
+            --input samples/external_traces/generic_agent_run.jsonl \
+            --mapping samples/trace_mappings/generic_agent.yml \
+            --out /tmp/phi-package-normalized.jsonl
+          diff -u samples/normalized_traces/generic_agent_expected.jsonl /tmp/phi-package-normalized.jsonl
+          PYTHONPATH=/tmp/phi-package-smoke python3 -m phi_boundary_gate.cli validate-trace \
+            --trace /tmp/phi-package-normalized.jsonl
 
   release-guard:
     runs-on: ubuntu-latest

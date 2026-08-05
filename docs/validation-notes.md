@@ -32,6 +32,9 @@ phi-boundary-gate validate-trace --trace normalized-trace.jsonl
 Normalize a generic external JSONL trace before validation:
 
 ```bash
+phi-boundary-gate validate-mapping \
+  --mapping config/phi-trace-map.yml
+
 phi-boundary-gate convert-trace \
   --input raw-agent-events.jsonl \
   --mapping config/phi-trace-map.yml \

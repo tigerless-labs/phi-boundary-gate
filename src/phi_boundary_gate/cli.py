@@ -5,14 +5,14 @@ import json
 import sys
 from pathlib import Path
 
-from .adapters import load_external_trace, write_converted_trace
+from .adapters import load_external_trace, mapping_summary, validate_trace_mapping, write_converted_trace
 from .policy import load_policy
 from .project import check_project_config, init_project
 from .redacted_trace import write_redacted_trace
 from .report import build_report, write_json_report, write_markdown_report
 from .trace import TraceEvent, load_trace, trace_event_to_dict
 
-COMMANDS = {"init", "check-config", "convert-trace", "scan-trace", "validate-trace"}
+COMMANDS = {"init", "check-config", "convert-trace", "scan-trace", "validate-mapping", "validate-trace"}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -42,6 +42,9 @@ def main(argv: list[str] | None = None) -> int:
     scan_parser = subparsers.add_parser("scan-trace", help="Scan a JSONL trace and write audit outputs.")
     _add_scan_trace_args(scan_parser)
 
+    mapping_parser = subparsers.add_parser("validate-mapping", help="Validate a mapping v1 YAML file.")
+    mapping_parser.add_argument("--mapping", required=True, type=Path, help="Path to a mapping v1 YAML file.")
+
     validate_parser = subparsers.add_parser("validate-trace", help="Validate a PHI Boundary Gate JSONL trace.")
     validate_parser.add_argument("--trace", required=True, type=Path, help="Path to the normalized JSONL trace.")
 
@@ -52,6 +55,8 @@ def main(argv: list[str] | None = None) -> int:
         return _check_config(args)
     if args.command == "convert-trace":
         return _convert_trace(args)
+    if args.command == "validate-mapping":
+        return _validate_mapping(args)
     if args.command == "validate-trace":
         return _validate_trace(args)
     return _scan_trace_from_args(args)
@@ -150,6 +155,25 @@ def _validate_trace(args: argparse.Namespace) -> int:
     print(f"Layers: {', '.join(layers)}")
     if destination_layers:
         print(f"Destination layers: {', '.join(destination_layers)}")
+    return 0
+
+
+def _validate_mapping(args: argparse.Namespace) -> int:
+    try:
+        mapping = validate_trace_mapping(args.mapping)
+    except (OSError, ValueError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    summary = mapping_summary(mapping)
+    print(f"Mapping ok: {args.mapping}")
+    print(f"Version: {summary['version']}")
+    print(f"Content fields: {', '.join(summary['content_fields'])}")
+    if summary["layer_aliases"]:
+        aliases = ", ".join(f"{key}->{value}" for key, value in sorted(summary["layer_aliases"].items()))
+        print(f"Layer aliases: {aliases}")
+    if summary["metadata_fields"]:
+        print(f"Metadata fields: {', '.join(summary['metadata_fields'])}")
+    print(f"Destinations configured: {summary['destination_count']}")
     return 0
 
 

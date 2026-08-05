@@ -21,12 +21,31 @@ class TraceMapping:
 
 def load_trace_mapping(path: Path) -> TraceMapping:
     with path.open("r", encoding="utf-8") as handle:
-        raw = yaml.safe_load(handle)
+        try:
+            raw = yaml.safe_load(handle)
+        except yaml.YAMLError as exc:
+            raise MappingError(f"{path}: invalid YAML: {exc}") from exc
     if not isinstance(raw, dict):
         raise MappingError(f"{path}: mapping must be a YAML object")
     if raw.get("version") != 1:
         raise MappingError(f"{path}: mapping version must be 1")
+    _validate_mapping_shape(raw, str(path))
     return TraceMapping(raw=raw)
+
+
+def validate_trace_mapping(path: Path) -> TraceMapping:
+    return load_trace_mapping(path)
+
+
+def mapping_summary(mapping: TraceMapping) -> dict[str, Any]:
+    raw = mapping.raw
+    return {
+        "version": raw["version"],
+        "content_fields": _configured_content_fields(raw["content"]),
+        "metadata_fields": _configured_metadata_fields(raw.get("metadata", {})),
+        "layer_aliases": _configured_layer_aliases(raw.get("layer")),
+        "destination_count": len(raw.get("destinations", []) or []),
+    }
 
 
 def load_external_trace(input_path: Path, mapping_path: Path) -> list[TraceEvent]:
@@ -65,6 +84,8 @@ def _convert_event(
 ) -> TraceEvent:
     event_id_spec = mapping.get("event_id")
     fallback_prefix = "external_evt"
+    if isinstance(event_id_spec, dict) and "fallback" in event_id_spec:
+        fallback_prefix = _expect_string(event_id_spec["fallback"], "event_id.fallback")
     if isinstance(event_id_spec, dict) and "fallback_prefix" in event_id_spec:
         fallback_prefix = _expect_string(event_id_spec["fallback_prefix"], "event_id.fallback_prefix")
     event_id = _string_value(
@@ -95,6 +116,196 @@ def _convert_event(
         destinations=destinations,
         metadata=metadata,
     )
+
+
+def _validate_mapping_shape(mapping: dict[str, Any], source: str) -> None:
+    for field_name in ("timestamp", "layer", "content"):
+        if field_name not in mapping:
+            raise MappingError(f"{source}: mapping must define {field_name}")
+    _validate_value_spec(mapping.get("event_id"), "event_id", allow_empty=True, allow_fallback_prefix=True)
+    _validate_value_spec(mapping["timestamp"], "timestamp")
+    _validate_layer_spec(mapping["layer"], "layer", SUPPORTED_LAYERS)
+    _validate_content_spec(mapping["content"])
+    _validate_source_spec(mapping.get("source", {}))
+    _validate_destinations_spec(mapping.get("destinations", []))
+    _validate_metadata_spec(mapping.get("metadata", {}))
+
+
+def _validate_content_spec(spec: Any) -> None:
+    if isinstance(spec, str):
+        _validate_field_path(spec, "content")
+        return
+    if not isinstance(spec, dict):
+        raise MappingError("content must be a field string or object")
+    if "field" in spec:
+        _validate_field_path(_expect_string(spec["field"], "content.field"), "content.field")
+        _validate_bool(spec.get("required", True), "content.required")
+        return
+    fields = spec.get("fields")
+    if not isinstance(fields, list) or not fields:
+        raise MappingError("content must define field or non-empty fields")
+    for index, field_spec in enumerate(fields):
+        if isinstance(field_spec, str):
+            _validate_field_path(field_spec, f"content.fields[{index}]")
+            continue
+        if not isinstance(field_spec, dict):
+            raise MappingError(f"content.fields[{index}] must be a field string or object")
+        _validate_field_path(_expect_string(field_spec.get("field"), f"content.fields[{index}].field"), f"content.fields[{index}].field")
+        label = field_spec.get("label", "")
+        if label is not None and not isinstance(label, str):
+            raise MappingError(f"content.fields[{index}].label must be a string")
+        _validate_bool(field_spec.get("required", True), f"content.fields[{index}].required")
+
+
+def _validate_source_spec(spec: Any) -> None:
+    if spec is None:
+        return
+    if not isinstance(spec, dict):
+        raise MappingError("source must be an object")
+    for key in ("type", "path"):
+        if key in spec:
+            _validate_value_spec(spec[key], f"source.{key}", allow_empty=True)
+
+
+def _validate_destinations_spec(spec: Any) -> None:
+    if spec is None:
+        return
+    if not isinstance(spec, list):
+        raise MappingError("destinations must be an array")
+    for index, destination in enumerate(spec):
+        if not isinstance(destination, dict):
+            raise MappingError(f"destinations[{index}] must be an object")
+        if "layer" in destination:
+            _validate_layer_spec(destination["layer"], f"destinations[{index}].layer", SUPPORTED_DESTINATION_LAYERS)
+        if "path" in destination:
+            _validate_value_spec(destination["path"], f"destinations[{index}].path", allow_empty=True)
+
+
+def _validate_metadata_spec(spec: Any) -> None:
+    if spec is None:
+        return
+    if not isinstance(spec, dict):
+        raise MappingError("metadata must be an object")
+    include = spec.get("include", [])
+    if not isinstance(include, list):
+        raise MappingError("metadata.include must be an array")
+    for index, item in enumerate(include):
+        if isinstance(item, str):
+            _validate_field_path(item, f"metadata.include[{index}]")
+            continue
+        if not isinstance(item, dict):
+            raise MappingError(f"metadata.include[{index}] must be a field string or object")
+        _validate_field_path(_expect_string(item.get("field"), f"metadata.include[{index}].field"), f"metadata.include[{index}].field")
+        name = item.get("name", "")
+        if name is not None and not isinstance(name, str):
+            raise MappingError(f"metadata.include[{index}].name must be a string")
+        _validate_bool(item.get("required", False), f"metadata.include[{index}].required")
+    constants = spec.get("constants", {})
+    if not isinstance(constants, dict):
+        raise MappingError("metadata.constants must be an object")
+
+
+def _validate_layer_spec(spec: Any, label: str, allowed_layers: set[str]) -> None:
+    _validate_value_spec(spec, label)
+    if isinstance(spec, dict):
+        if "value" in spec:
+            _validate_allowed_layer(_expect_string(spec["value"], f"{label}.value"), label, allowed_layers)
+        layer_map = spec.get("map", {})
+        if layer_map:
+            if not isinstance(layer_map, dict):
+                raise MappingError(f"{label}.map must be an object")
+            for source_value, target_value in layer_map.items():
+                if not isinstance(source_value, str):
+                    raise MappingError(f"{label}.map keys must be strings")
+                _validate_allowed_layer(_expect_string(target_value, f"{label}.map[{source_value}]"), f"{label}.map[{source_value}]", allowed_layers)
+
+
+def _validate_value_spec(
+    spec: Any,
+    label: str,
+    *,
+    allow_empty: bool = False,
+    allow_fallback_prefix: bool = False,
+) -> None:
+    if spec is None:
+        if allow_empty:
+            return
+        raise MappingError(f"{label} is required")
+    if isinstance(spec, str):
+        _validate_field_path(spec, label)
+        return
+    if not isinstance(spec, dict):
+        raise MappingError(f"{label} must be a field string or object")
+    allowed_keys = {"field", "value", "default", "required", "map"}
+    if allow_fallback_prefix:
+        allowed_keys.add("fallback")
+        allowed_keys.add("fallback_prefix")
+    unknown = sorted(set(spec) - allowed_keys)
+    if unknown:
+        raise MappingError(f"{label} has unsupported key(s): {', '.join(unknown)}")
+    if "field" in spec:
+        _validate_field_path(_expect_string(spec["field"], f"{label}.field"), f"{label}.field")
+    elif "value" not in spec and "default" not in spec and not allow_empty:
+        raise MappingError(f"{label} must define field, value, or default")
+    if "value" in spec:
+        _expect_string(spec["value"], f"{label}.value")
+    if "default" in spec:
+        _expect_string(spec["default"], f"{label}.default")
+    if "fallback_prefix" in spec:
+        _expect_string(spec["fallback_prefix"], f"{label}.fallback_prefix")
+    if "fallback" in spec:
+        _expect_string(spec["fallback"], f"{label}.fallback")
+    _validate_bool(spec.get("required", True), f"{label}.required")
+
+
+def _validate_allowed_layer(value: str, label: str, allowed_layers: set[str]) -> None:
+    if value not in allowed_layers:
+        allowed = ", ".join(sorted(allowed_layers))
+        raise MappingError(f"{label} maps to unsupported layer {value!r}; expected one of: {allowed}")
+
+
+def _validate_bool(value: Any, label: str) -> None:
+    if not isinstance(value, bool):
+        raise MappingError(f"{label} must be a boolean")
+
+
+def _validate_field_path(path: str, label: str) -> None:
+    if not path:
+        raise MappingError(f"{label} must not be empty")
+    for part in path.split("."):
+        if not part:
+            raise MappingError(f"{label} has an empty path segment")
+
+
+def _configured_content_fields(spec: Any) -> list[str]:
+    if isinstance(spec, str):
+        return [spec]
+    if not isinstance(spec, dict):
+        return []
+    if "field" in spec:
+        return [str(spec["field"])]
+    return [
+        field_spec if isinstance(field_spec, str) else str(field_spec.get("field", ""))
+        for field_spec in spec.get("fields", [])
+    ]
+
+
+def _configured_metadata_fields(spec: Any) -> list[str]:
+    if not isinstance(spec, dict):
+        return []
+    fields: list[str] = []
+    for item in spec.get("include", []):
+        if isinstance(item, str):
+            fields.append(item)
+        elif isinstance(item, dict) and "field" in item:
+            fields.append(str(item["field"]))
+    return fields
+
+
+def _configured_layer_aliases(spec: Any) -> dict[str, str]:
+    if not isinstance(spec, dict) or not isinstance(spec.get("map"), dict):
+        return {}
+    return {str(key): str(value) for key, value in spec["map"].items()}
 
 
 def _content_value(
