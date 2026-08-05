@@ -19,7 +19,7 @@ Configure PyPI Trusted Publishing before the first release:
 
 Trusted Publishing avoids long-lived PyPI API tokens in GitHub Secrets.
 
-## v0.5.2
+## v0.5.3
 
 Before merging a release PR:
 
@@ -50,23 +50,34 @@ PYTHONPATH=src python3 -m phi_boundary_gate.cli convert-trace \
   --input samples/external_traces/generic_agent_run.jsonl \
   --mapping samples/trace_mappings/generic_agent.yml \
   --out /tmp/generic-agent-normalized.jsonl
+diff -u samples/normalized_traces/generic_agent_expected.jsonl /tmp/generic-agent-normalized.jsonl
+PYTHONPATH=src python3 -m phi_boundary_gate.cli validate-mapping \
+  --mapping samples/trace_mappings/generic_agent.yml
 PYTHONPATH=src python3 -m phi_boundary_gate.cli validate-trace \
   --trace /tmp/generic-agent-normalized.jsonl
 python3 .github/scripts/check_release_version.py --skip-bump-check
 python3 -m build
 python3 -m twine check dist/*
-python3 -m pip install --no-build-isolation --no-deps --target /tmp/phi-package-smoke-v052 .
-test -f /tmp/phi-package-smoke-v052/phi_boundary_gate/py.typed
-test -f /tmp/phi-package-smoke-v052/phi_boundary_gate/templates/phi-policy.yml
-PYTHONPATH=/tmp/phi-package-smoke-v052 python3 -c "from phi_boundary_gate import __version__, PhiBoundaryGate, guard_text, guard_compliance, load_external_trace; print(__version__, PhiBoundaryGate.__name__, guard_text.__name__, guard_compliance.__name__, load_external_trace.__name__)"
-PYTHONPATH=/tmp/phi-package-smoke-v052 python3 -m phi_boundary_gate.cli --help
+python3 -m pip install --no-build-isolation --no-deps --target /tmp/phi-package-smoke-v053 .
+test -f /tmp/phi-package-smoke-v053/phi_boundary_gate/py.typed
+test -f /tmp/phi-package-smoke-v053/phi_boundary_gate/templates/phi-policy.yml
+test -f /tmp/phi-package-smoke-v053/phi_boundary_gate/adapters/generic_jsonl.py
+PYTHONPATH=/tmp/phi-package-smoke-v053 python3 -c "from phi_boundary_gate import __version__, PhiBoundaryGate, guard_text, guard_compliance, load_external_trace, validate_trace_mapping; print(__version__, PhiBoundaryGate.__name__, guard_text.__name__, guard_compliance.__name__, load_external_trace.__name__, validate_trace_mapping.__name__)"
+PYTHONPATH=/tmp/phi-package-smoke-v053 python3 -m phi_boundary_gate.cli --help
+PYTHONPATH=/tmp/phi-package-smoke-v053 python3 -m phi_boundary_gate.cli validate-mapping \
+  --mapping samples/trace_mappings/generic_agent.yml
+PYTHONPATH=/tmp/phi-package-smoke-v053 python3 -m phi_boundary_gate.cli convert-trace \
+  --input samples/external_traces/generic_agent_run.jsonl \
+  --mapping samples/trace_mappings/generic_agent.yml \
+  --out /tmp/generic-agent-normalized-installed.jsonl
+diff -u samples/normalized_traces/generic_agent_expected.jsonl /tmp/generic-agent-normalized-installed.jsonl
 ```
 
 After checks pass on `main` and TestPyPI publishing succeeds:
 
 ```bash
-git tag v0.5.2
-git push origin v0.5.2
+git tag v0.5.3
+git push origin v0.5.3
 ```
 
 Downstream projects should prefer the PyPI package:
@@ -78,7 +89,7 @@ phi-boundary-gate>=0.5,<0.6
 Git tag fallback remains available when a package index cannot be used:
 
 ```text
-phi-boundary-gate @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.5.2
+phi-boundary-gate @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.5.3
 ```
 
 ## Notes

@@ -15,6 +15,7 @@ from phi_boundary_gate import (  # noqa: E402
     load_external_trace,
     load_trace,
     redacted_trace_events,
+    validate_trace_mapping,
 )
 from phi_boundary_gate.detectors import RULES, detect_candidates  # noqa: E402
 from phi_boundary_gate.policy import load_policy  # noqa: E402
@@ -76,6 +77,7 @@ class RepoQualityTest(unittest.TestCase):
         self.assertEqual(load_external_trace.__name__, "load_external_trace")
         self.assertEqual(load_trace.__name__, "load_trace")
         self.assertEqual(redacted_trace_events.__name__, "redacted_trace_events")
+        self.assertEqual(validate_trace_mapping.__name__, "validate_trace_mapping")
 
     def test_package_includes_typed_marker_and_project_templates(self) -> None:
         package_root = ROOT / "src/phi_boundary_gate"

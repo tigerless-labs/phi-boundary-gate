@@ -1,7 +1,7 @@
 version: 1
 event_id:
   field: id
-  fallback: external_evt
+  fallback_prefix: external_evt
 timestamp:
   field: created_at
 layer:

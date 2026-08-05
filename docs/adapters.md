@@ -5,9 +5,10 @@ does not require those projects to adopt its trace schema internally. Instead,
 use `convert-trace` to normalize generic JSONL into the package trace schema,
 then run `validate-trace` and `scan-trace`.
 
-The mapping v1 adapter is intentionally small and experimental. It supports
-common JSONL event logs, but it is not a full JSONPath engine and does not try to
-model every agent framework.
+Mapping v1 is the supported generic JSONL mapping contract for the `0.5.x`
+release line. The adapter is intentionally small: it supports common JSONL event
+logs, but it is not a full JSONPath engine and does not try to model every agent
+framework.
 
 ## CLI Flow
 
@@ -25,6 +26,13 @@ phi-boundary-gate scan-trace \
   --out /tmp/phi-report.md \
   --json /tmp/phi-report.json \
   --redacted-trace /tmp/phi-redacted-trace.jsonl
+```
+
+Validate the mapping itself before converting external traces:
+
+```bash
+phi-boundary-gate validate-mapping \
+  --mapping samples/trace_mappings/generic_agent.yml
 ```
 
 Use `--stdout` when a pipeline should avoid writing the normalized trace to disk:
@@ -64,7 +72,20 @@ The returned objects are regular `TraceEvent` instances and can be passed to
 
 ## Mapping v1
 
-The mapping file is YAML:
+The mapping file is YAML. A valid mapping v1 file must define:
+
+- `version: 1`
+- `timestamp`
+- `layer`
+- `content`
+
+`event_id` is optional. If it is omitted or its optional field is missing, the
+adapter generates `external_evt_0001`, `external_evt_0002`, and so on. Use
+`fallback_prefix` to customize that prefix.
+
+The sample mapping covers user input, RAG chunks, tool output, prompt assembly,
+memory writes, debug logs, provider destinations, array field paths, multiple
+content fields, and metadata includes:
 
 ```yaml
 version: 1
@@ -155,6 +176,24 @@ It does not support filters, wildcards, negative indexes, quoted keys, or full
 JSONPath. If an external framework needs those features, add a project-specific
 preprocessor or adapter before writing normalized trace events.
 
+## Validation Contract
+
+`validate-mapping` checks mapping structure without reading any external trace
+events. It validates:
+
+- mapping version
+- required top-level fields
+- value spec shapes
+- content field shapes
+- layer alias outputs
+- destination layer outputs
+- metadata include shapes
+- unsupported mapping keys
+
+`validate-trace` checks normalized JSONL events after conversion. A mapping can be
+valid while still failing conversion if a required external event field is
+missing in a particular input line.
+
 ## Content Fields
 
 `content.field` copies one external field into the normalized event content.
@@ -181,6 +220,15 @@ member_id: MBR-SYN-8842
 The adapter stores selected content source paths in
 `metadata.external_content_paths` so reviewers can see which external fields fed
 the scan.
+
+The repository includes a golden normalized fixture:
+
+```text
+samples/normalized_traces/generic_agent_expected.jsonl
+```
+
+Tests compare the adapter output against that fixture to keep the mapping output
+stable across releases.
 
 ## Required And Optional Fields
 
