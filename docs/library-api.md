@@ -43,6 +43,30 @@ audit_payload = decision.to_safe_dict()
 from the current working directory. The config points to the consuming project's
 PHI policy and optional compliance policy.
 
+## Stable Exceptions
+
+Package-level validation and integration errors inherit from
+`PhiBoundaryGateError`, which also inherits from `ValueError` for compatibility
+with earlier `0.5.x` callers.
+
+```python
+from phi_boundary_gate import PhiBoundaryGateError, PolicyError, ProjectConfigError, TraceMappingError
+
+try:
+    gate = PhiBoundaryGate.from_project()
+except ProjectConfigError as exc:
+    raise RuntimeError(f"project config is not ready: {exc}") from exc
+except PolicyError as exc:
+    raise RuntimeError(f"policy is not valid: {exc}") from exc
+except PhiBoundaryGateError as exc:
+    raise RuntimeError(f"PHI gate validation failed: {exc}") from exc
+```
+
+Use `TraceMappingError` for mapping validation and external trace conversion
+failures. `ValueError` remains a broad fallback for projects that have not
+adopted the typed exceptions yet. Missing project config discovery also remains
+compatible with `FileNotFoundError` through `ProjectConfigNotFoundError`.
+
 ## Scan Only
 
 ```python
@@ -170,7 +194,21 @@ For CI or offline audit, keep `mode="report_only"` and use the CLI report output
 
 ## External Trace Conversion
 
-External agent logs can be normalized through mapping v1 before scanning:
+External agent logs can be normalized through mapping v1 before scanning. New
+integrations should prefer the public `TraceAdapter` facade:
+
+```python
+from phi_boundary_gate import TraceAdapter, TraceMappingError
+
+try:
+    adapter = TraceAdapter.from_mapping("config/phi-trace-map.yml")
+    events = adapter.load("raw-agent-events.jsonl")
+    adapter.write("raw-agent-events.jsonl", "/tmp/phi-normalized-trace.jsonl")
+except TraceMappingError as exc:
+    raise RuntimeError(f"external trace normalization failed: {exc}") from exc
+```
+
+Function-style helpers remain available:
 
 ```python
 from pathlib import Path
@@ -191,6 +229,9 @@ write_converted_trace(
 
 The returned `TraceEvent` objects use the same shape as `load_trace()`. See
 [Trace Adapters](adapters.md) for the mapping schema and CLI flow.
+
+Runnable SDK and adapter examples are kept in [../examples](../examples), and CI
+executes them against the installed package smoke path.
 
 ## CLI Redacted Trace
 

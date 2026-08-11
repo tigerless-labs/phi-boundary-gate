@@ -1,8 +1,8 @@
 """PHI boundary gating, redaction, and audit reporting."""
 
-__version__ = "0.5.3"
+__version__ = "0.5.4"
 
-from .adapters import load_external_trace, load_trace_mapping, validate_trace_mapping, write_converted_trace
+from .adapters import TraceAdapter, TraceMapping, load_external_trace, load_trace_mapping, validate_trace_mapping, write_converted_trace
 from .api import GuardDecision, GuardMode, ScanFinding, guard_text, redact_text, scan_text
 from .compliance import (
     ComplianceContext,
@@ -12,6 +12,7 @@ from .compliance import (
     guard_compliance,
     load_compliance_policy,
 )
+from .exceptions import PhiBoundaryGateError, PolicyError, ProjectConfigError, ProjectConfigNotFoundError, TraceMappingError
 from .policy import load_policy
 from .project import ProjectConfig, check_project_config, discover_project_config, init_project, load_project_config
 from .redacted_trace import redacted_trace_events, write_redacted_trace
@@ -29,7 +30,14 @@ __all__ = [
     "ProjectConfig",
     "ScanFinding",
     "ServiceProfile",
+    "PhiBoundaryGateError",
+    "PolicyError",
+    "ProjectConfigError",
+    "ProjectConfigNotFoundError",
+    "TraceAdapter",
     "TraceEvent",
+    "TraceMapping",
+    "TraceMappingError",
     "build_report",
     "check_project_config",
     "discover_project_config",

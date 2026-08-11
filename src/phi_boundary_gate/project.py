@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from .compliance import CompliancePolicy, load_compliance_policy
+from .exceptions import ProjectConfigError, ProjectConfigNotFoundError
 from .policy import Policy, load_policy
 
 
@@ -76,7 +77,7 @@ def discover_project_config(start: Path | None = None) -> ProjectConfig:
         config_path = root / CONFIG_DIR / CONFIG_FILE
         if config_path.is_file():
             return load_project_config(config_path)
-    raise FileNotFoundError(
+    raise ProjectConfigNotFoundError(
         f"no {CONFIG_DIR}/{CONFIG_FILE} found from {start_path}; run `phi-boundary-gate init` first"
     )
 
@@ -87,21 +88,21 @@ def load_project_config(config_path: Path) -> ProjectConfig:
     try:
         raw = json.loads(config_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
-        raise ValueError(f"{config_path}: invalid JSON: {exc.msg}") from exc
+        raise ProjectConfigError(f"{config_path}: invalid JSON: {exc.msg}") from exc
     if not isinstance(raw, dict):
-        raise ValueError(f"{config_path}: project config must be a JSON object")
+        raise ProjectConfigError(f"{config_path}: project config must be a JSON object")
 
     policy_raw = raw.get("policy")
     if not isinstance(policy_raw, str) or not policy_raw:
-        raise ValueError(f"{config_path}: field 'policy' must be a non-empty string")
+        raise ProjectConfigError(f"{config_path}: field 'policy' must be a non-empty string")
 
     compliance_raw = raw.get("compliance_policy")
     if compliance_raw is not None and (not isinstance(compliance_raw, str) or not compliance_raw):
-        raise ValueError(f"{config_path}: field 'compliance_policy' must be a non-empty string when present")
+        raise ProjectConfigError(f"{config_path}: field 'compliance_policy' must be a non-empty string when present")
 
     enable_presidio = raw.get("enable_presidio", False)
     if not isinstance(enable_presidio, bool):
-        raise ValueError(f"{config_path}: field 'enable_presidio' must be a boolean")
+        raise ProjectConfigError(f"{config_path}: field 'enable_presidio' must be a boolean")
 
     return ProjectConfig(
         root=root,
