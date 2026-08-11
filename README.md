@@ -1,7 +1,7 @@
 <h1 align="center">PHI Boundary Gate</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/release-v0.5.3-brightgreen.svg" alt="release v0.5.3" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
+  <img src="https://img.shields.io/badge/release-v0.5.4-brightgreen.svg" alt="release v0.5.4" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
 </p>
 
 **PHI Boundary Gate** detects, gates, redacts, and reports PHI candidate
@@ -310,6 +310,32 @@ safe_log_text = gate.redact_for_log("debug member_id=MBR-SYN-8842")
 audit_payload = decision.to_safe_dict()
 ```
 
+External traces can use the public adapter facade instead of importing internal
+adapter modules:
+
+```python
+from phi_boundary_gate import TraceAdapter
+
+adapter = TraceAdapter.from_mapping("config/phi-trace-map.yml")
+events = adapter.load("raw-agent-events.jsonl")
+adapter.write("raw-agent-events.jsonl", "/tmp/phi-normalized-trace.jsonl")
+```
+
+Callers that need typed error handling can catch package-level exceptions:
+
+```python
+from phi_boundary_gate import PhiBoundaryGateError, TraceMappingError
+
+try:
+    events = adapter.load("raw-agent-events.jsonl")
+except TraceMappingError as exc:
+    raise RuntimeError(f"trace mapping failed: {exc}") from exc
+except PhiBoundaryGateError as exc:
+    raise RuntimeError(f"PHI gate failed: {exc}") from exc
+```
+
+Runnable examples are kept in [examples](examples).
+
 ## Compliance Guard
 
 Projects that route PHI to covered services can run the compliance guard before
@@ -375,7 +401,7 @@ Run the tests:
 PYTHONPATH=src python3 -m unittest discover -s tests
 ```
 
-Current release: `v0.5.3`.
+Current release: `v0.5.4`.
 
 ## Limits
 

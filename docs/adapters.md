@@ -51,20 +51,25 @@ an immediate `scan-trace --redacted-trace` step.
 ## Python API
 
 ```python
+from phi_boundary_gate import TraceAdapter, TraceMappingError
+
+try:
+    adapter = TraceAdapter.from_mapping("config/phi-trace-map.yml")
+    events = adapter.load("raw-agent-events.jsonl")
+    adapter.write("raw-agent-events.jsonl", "/tmp/phi-normalized-trace.jsonl")
+except TraceMappingError as exc:
+    raise RuntimeError(f"external trace normalization failed: {exc}") from exc
+```
+
+Function-style helpers are also public:
+
+```python
 from pathlib import Path
 
 from phi_boundary_gate import load_external_trace, write_converted_trace
 
-events = load_external_trace(
-    Path("raw-agent-events.jsonl"),
-    Path("config/phi-trace-map.yml"),
-)
-
-write_converted_trace(
-    Path("raw-agent-events.jsonl"),
-    Path("config/phi-trace-map.yml"),
-    Path("/tmp/phi-normalized-trace.jsonl"),
-)
+events = load_external_trace(Path("raw-agent-events.jsonl"), Path("config/phi-trace-map.yml"))
+write_converted_trace(Path("raw-agent-events.jsonl"), Path("config/phi-trace-map.yml"), Path("/tmp/phi-normalized-trace.jsonl"))
 ```
 
 The returned objects are regular `TraceEvent` instances and can be passed to

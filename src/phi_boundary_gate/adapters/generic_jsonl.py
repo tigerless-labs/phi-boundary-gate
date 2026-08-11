@@ -7,16 +7,39 @@ from typing import Any
 
 import yaml
 
+from ..exceptions import TraceMappingError
 from ..trace import SUPPORTED_DESTINATION_LAYERS, SUPPORTED_LAYERS, TraceEvent, write_trace
 
 
-class MappingError(ValueError):
+class MappingError(TraceMappingError):
     pass
 
 
 @dataclass(frozen=True)
 class TraceMapping:
     raw: dict[str, Any]
+
+
+@dataclass(frozen=True)
+class TraceAdapter:
+    """Callable adapter facade for converting external trace files."""
+
+    mapping: TraceMapping
+
+    @classmethod
+    def from_mapping(cls, mapping_path: Path | str) -> "TraceAdapter":
+        return cls(load_trace_mapping(Path(mapping_path)))
+
+    def load(self, input_path: Path | str) -> list[TraceEvent]:
+        return convert_generic_jsonl_trace(Path(input_path), self.mapping)
+
+    def write(self, input_path: Path | str, output_path: Path | str) -> list[TraceEvent]:
+        events = self.load(input_path)
+        write_trace(events, Path(output_path))
+        return events
+
+    def summary(self) -> dict[str, Any]:
+        return mapping_summary(self.mapping)
 
 
 def load_trace_mapping(path: Path) -> TraceMapping:

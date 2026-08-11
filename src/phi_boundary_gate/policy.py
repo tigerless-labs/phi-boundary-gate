@@ -6,6 +6,7 @@ from typing import Any
 
 import yaml
 
+from .exceptions import PolicyError
 from .trace import SUPPORTED_LAYERS, supported_layers_text
 
 
@@ -71,40 +72,43 @@ class Policy:
 
 def load_policy(path: Path) -> Policy:
     with path.open("r", encoding="utf-8") as handle:
-        raw = yaml.safe_load(handle)
+        try:
+            raw = yaml.safe_load(handle)
+        except yaml.YAMLError as exc:
+            raise PolicyError(f"{path}: invalid YAML: {exc}") from exc
 
     if not isinstance(raw, dict):
-        raise ValueError(f"{path}: policy must be a YAML object")
+        raise PolicyError(f"{path}: policy must be a YAML object")
     if raw.get("version") != 1:
-        raise ValueError(f"{path}: policy version must be 1")
+        raise PolicyError(f"{path}: policy version must be 1")
 
     raw_categories = raw.get("categories")
     if not isinstance(raw_categories, dict) or not raw_categories:
-        raise ValueError(f"{path}: policy must define at least one category")
+        raise PolicyError(f"{path}: policy must define at least one category")
 
     categories = {}
     for name, value in raw_categories.items():
         if not isinstance(name, str) or not name:
-            raise ValueError(f"{path}: category names must be non-empty strings")
+            raise PolicyError(f"{path}: category names must be non-empty strings")
         categories[name] = _parse_category_policy(path, name, value)
     return Policy(version=1, categories=categories)
 
 
 def _parse_category_policy(path: Path, name: str, raw: Any) -> CategoryPolicy:
     if not isinstance(raw, dict):
-        raise ValueError(f"{path}: category {name!r} must be an object")
+        raise PolicyError(f"{path}: category {name!r} must be an object")
 
     description = raw.get("description", "")
     if not isinstance(description, str):
-        raise ValueError(f"{path}: category {name!r} field 'description' must be a string")
+        raise PolicyError(f"{path}: category {name!r} field 'description' must be a string")
 
     high_risk = raw.get("high_risk", False)
     if not isinstance(high_risk, bool):
-        raise ValueError(f"{path}: category {name!r} field 'high_risk' must be a boolean")
+        raise PolicyError(f"{path}: category {name!r} field 'high_risk' must be a boolean")
 
     redaction = raw.get("redaction")
     if not isinstance(redaction, str) or not redaction:
-        raise ValueError(f"{path}: category {name!r} must define a redaction string")
+        raise PolicyError(f"{path}: category {name!r} must define a redaction string")
 
     return CategoryPolicy(
         description=description,
@@ -118,10 +122,10 @@ def _parse_category_policy(path: Path, name: str, raw: Any) -> CategoryPolicy:
 
 def _as_layer_set(path: Path, name: str, value: Any, field_name: str) -> frozenset[str]:
     if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
-        raise ValueError(f"{path}: category {name!r} field {field_name!r} must be a string array")
+        raise PolicyError(f"{path}: category {name!r} field {field_name!r} must be a string array")
     unsupported = sorted(set(value) - SUPPORTED_LAYERS)
     if unsupported:
-        raise ValueError(
+        raise PolicyError(
             f"{path}: category {name!r} field {field_name!r} contains unsupported layer(s): "
             f"{', '.join(unsupported)}; expected one of: {supported_layers_text()}"
         )

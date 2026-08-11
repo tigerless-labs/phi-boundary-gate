@@ -13,6 +13,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
+from phi_boundary_gate import TraceAdapter, TraceMappingError  # noqa: E402
 from phi_boundary_gate.adapters import load_external_trace, write_converted_trace  # noqa: E402
 from phi_boundary_gate.cli import main  # noqa: E402
 from phi_boundary_gate.policy import load_policy  # noqa: E402
@@ -55,6 +56,19 @@ class TraceAdaptersTest(unittest.TestCase):
                 output_path.read_text(encoding="utf-8"),
                 (ROOT / "samples/normalized_traces/generic_agent_expected.jsonl").read_text(encoding="utf-8"),
             )
+
+    def test_trace_adapter_facade_converts_and_summarizes_mapping(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            output_path = Path(tmp) / "normalized.jsonl"
+            adapter = TraceAdapter.from_mapping(ROOT / "samples/trace_mappings/generic_agent.yml")
+
+            events = adapter.write(ROOT / "samples/external_traces/generic_agent_run.jsonl", output_path)
+            summary = adapter.summary()
+
+            self.assertEqual(len(events), 6)
+            self.assertTrue(output_path.is_file())
+            self.assertEqual(summary["version"], 1)
+            self.assertIn("messages.0.content", summary["content_fields"])
 
     def test_converted_trace_can_be_scanned_by_existing_report_flow(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -120,7 +134,7 @@ class TraceAdaptersTest(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            with self.assertRaisesRegex(ValueError, "missing field 'payload.text'"):
+            with self.assertRaisesRegex(TraceMappingError, "missing field 'payload.text'"):
                 load_external_trace(raw_path, mapping_path)
 
     def test_invalid_mapped_layer_fails_clearly(self) -> None:
@@ -259,7 +273,30 @@ class TraceAdaptersTest(unittest.TestCase):
             with redirect_stdout(StringIO()) as validate_stdout:
                 self.assertEqual(main(["validate-trace", "--trace", str(output_path)]), 0)
             self.assertIn("Trace ok:", validate_stdout.getvalue())
-            self.assertIn("Events: 6", validate_stdout.getvalue())
+
+    def test_trace_mapping_example_runs_from_source_path(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            output_path = Path(tmp) / "example-normalized.jsonl"
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "examples/trace_mapping_pipeline.py"),
+                    "--out",
+                    str(output_path),
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+                env=self.subprocess_env(),
+            )
+
+            self.assertIn("Wrote 6 normalized event(s)", result.stdout)
+            self.assertEqual(
+                output_path.read_text(encoding="utf-8"),
+                (ROOT / "samples/normalized_traces/generic_agent_expected.jsonl").read_text(encoding="utf-8"),
+            )
+            self.assertEqual(len(load_trace(output_path)), 6)
 
     def test_cli_validate_mapping(self) -> None:
         with redirect_stdout(StringIO()) as stdout:

@@ -16,13 +16,13 @@ jobs:
       - name: Install runtime dependencies
         run: python3 -m pip install -e ".[dev]"
       - name: Lint
-        run: ruff check src tests .github/scripts
+        run: ruff check src tests examples .github/scripts
       - name: Unit tests
         run: PYTHONPATH=src python3 -m unittest discover -s tests -v
       - name: Release guard tests
         run: python3 -m unittest discover -s .github/scripts/tests -v
       - name: Compile
-        run: PYTHONPATH=src python3 -m compileall -q src tests .github/scripts
+        run: PYTHONPATH=src python3 -m compileall -q src tests examples .github/scripts
       - name: CLI sample smoke
         run: |
           PYTHONPATH=src python3 -m phi_boundary_gate.cli \
@@ -51,7 +51,12 @@ jobs:
           python3 -m pip install --no-build-isolation --no-deps --target /tmp/phi-package-smoke .
           test -f /tmp/phi-package-smoke/phi_boundary_gate/py.typed
           test -f /tmp/phi-package-smoke/phi_boundary_gate/templates/phi-policy.yml
-          PYTHONPATH=/tmp/phi-package-smoke python3 -c "from phi_boundary_gate import __version__, PhiBoundaryGate, guard_text, guard_compliance, load_external_trace, validate_trace_mapping; print(__version__, PhiBoundaryGate.__name__, guard_text.__name__, guard_compliance.__name__, load_external_trace.__name__, validate_trace_mapping.__name__)"
+          PYTHONPATH=/tmp/phi-package-smoke python3 -c "from phi_boundary_gate import __version__, PhiBoundaryGate, PhiBoundaryGateError, TraceAdapter, TraceMappingError, guard_text, guard_compliance, load_external_trace, validate_trace_mapping; print(__version__, PhiBoundaryGate.__name__, PhiBoundaryGateError.__name__, TraceAdapter.__name__, TraceMappingError.__name__, guard_text.__name__, guard_compliance.__name__, load_external_trace.__name__, validate_trace_mapping.__name__)"
+          PYTHONPATH=/tmp/phi-package-smoke python3 examples/sdk_guard_model_input.py
+          PYTHONPATH=/tmp/phi-package-smoke python3 examples/sdk_redact_logs.py
+          PYTHONPATH=/tmp/phi-package-smoke python3 examples/trace_mapping_pipeline.py \
+            --out /tmp/phi-package-example-normalized.jsonl
+          diff -u samples/normalized_traces/generic_agent_expected.jsonl /tmp/phi-package-example-normalized.jsonl
           PYTHONPATH=/tmp/phi-package-smoke python3 -m phi_boundary_gate.cli --help
           PYTHONPATH=/tmp/phi-package-smoke python3 -m phi_boundary_gate.cli validate-mapping \
             --mapping samples/trace_mappings/generic_agent.yml
