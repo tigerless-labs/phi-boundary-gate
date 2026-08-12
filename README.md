@@ -1,7 +1,7 @@
 <h1 align="center">PHI Boundary Gate</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/release-v0.5.4-brightgreen.svg" alt="release v0.5.4" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
+  <img src="https://img.shields.io/badge/release-v0.5.5-brightgreen.svg" alt="release v0.5.5" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
 </p>
 
 **PHI Boundary Gate** detects, gates, redacts, and reports PHI candidate
@@ -142,7 +142,8 @@ For `requirements.txt` and `pyproject.toml` examples, see
 
 External agent logs usually need a thin normalization step before scanning. The
 experimental mapping v1 adapter converts generic JSONL into the package trace
-schema:
+schema, including multi-field fallbacks for agent runtimes that use different
+names for event IDs, timestamps, layers, source nodes, or provider sinks:
 
 ```bash
 phi-boundary-gate convert-trace \
@@ -401,7 +402,7 @@ Run the tests:
 PYTHONPATH=src python3 -m unittest discover -s tests
 ```
 
-Current release: `v0.5.4`.
+Current release: `v0.5.5`.
 
 ## Limits
 

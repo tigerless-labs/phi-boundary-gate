@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "phi-boundary-gate"
-version = "0.5.4"
+version = "0.5.5"
 description = "Synthetic PHI boundary gating, redaction, and audit reporting toolkit."
 readme = "README.md"
 requires-python = ">=3.11"

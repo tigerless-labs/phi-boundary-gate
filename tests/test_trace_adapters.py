@@ -57,6 +57,38 @@ class TraceAdaptersTest(unittest.TestCase):
                 (ROOT / "samples/normalized_traces/generic_agent_expected.jsonl").read_text(encoding="utf-8"),
             )
 
+    def test_value_spec_fields_fallback_converts_callback_agent_trace(self) -> None:
+        events = load_external_trace(
+            ROOT / "samples/external_traces/callback_agent_run.jsonl",
+            ROOT / "samples/trace_mappings/callback_agent.yml",
+        )
+
+        self.assertEqual(len(events), 4)
+        self.assertEqual([event.layer for event in events], ["user_message", "rag_context", "tool_output", "model_input"])
+        self.assertEqual(events[0].event_id, "cb-evt-001")
+        self.assertEqual(events[0].timestamp, "2026-02-04T10:00:00Z")
+        self.assertEqual(events[1].event_id, "cb-evt-002")
+        self.assertEqual(events[1].timestamp, "2026-02-04T10:00:01Z")
+        self.assertEqual(events[3].event_id, "callback_evt_0004")
+        self.assertEqual(events[3].destinations, [{"layer": "model_provider", "path": "responses.create"}])
+        self.assertEqual(events[3].metadata["external_content_paths"], ["request.messages.0.content"])
+        self.assertEqual(events[2].source, {"type": "callback-agent", "path": "claim_lookup"})
+
+    def test_callback_agent_conversion_matches_golden_trace(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            output_path = Path(tmp) / "normalized.jsonl"
+
+            write_converted_trace(
+                ROOT / "samples/external_traces/callback_agent_run.jsonl",
+                ROOT / "samples/trace_mappings/callback_agent.yml",
+                output_path,
+            )
+
+            self.assertEqual(
+                output_path.read_text(encoding="utf-8"),
+                (ROOT / "samples/normalized_traces/callback_agent_expected.jsonl").read_text(encoding="utf-8"),
+            )
+
     def test_trace_adapter_facade_converts_and_summarizes_mapping(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             output_path = Path(tmp) / "normalized.jsonl"
@@ -210,6 +242,23 @@ class TraceAdaptersTest(unittest.TestCase):
 
             with self.assertRaisesRegex(ValueError, "no content fields produced text"):
                 load_external_trace(raw_path, mapping_path)
+
+    def test_value_spec_rejects_field_and_fields_together(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            mapping_path = Path(tmp) / "mapping.yml"
+            mapping_path.write_text(
+                "version: 1\n"
+                "timestamp:\n"
+                "  field: created_at\n"
+                "  fields:\n"
+                "    - timestamp\n"
+                "layer: event_type\n"
+                "content: payload.text\n",
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(TraceMappingError, "timestamp must not define both field and fields"):
+                TraceAdapter.from_mapping(mapping_path)
 
     def test_object_content_is_serialized_for_scanning(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
