@@ -1,0 +1,68 @@
+version: 1
+event_id:
+  fields:
+    - event.id
+    - id
+  required: false
+  fallback_prefix: callback_evt
+timestamp:
+  fields:
+    - timestamp
+    - created_at
+layer:
+  fields:
+    - kind
+    - event_type
+  map:
+    message.user: user_message
+    retrieval.hit: rag_context
+    tool.done: tool_output
+    llm.request: model_input
+content:
+  fields:
+    - field: message.content
+      label: user_message
+      required: false
+    - field: payload.text
+      label: rag_context
+      required: false
+    - field: data.result.summary
+      label: tool_summary
+      required: false
+    - field: request.messages.0.content
+      label: user_prompt
+      required: false
+source:
+  type:
+    fields:
+      - node.name
+      - component.name
+    default: callback_agent
+    required: false
+  path:
+    fields:
+      - node.path
+      - component.path
+    default: unknown_node
+    required: false
+destinations:
+  - layer:
+      fields:
+        - next.layer
+        - provider.sink
+      required: false
+      map:
+        prompt: model_input
+    path:
+      fields:
+        - next.path
+        - request.path
+      required: false
+metadata:
+  include:
+    - field: run
+      name: run_id
+      required: false
+    - thread_id
+  constants:
+    adapter: callback_agent_mapping_v1

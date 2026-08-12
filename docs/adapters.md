@@ -155,6 +155,46 @@ metadata:
     adapter: generic_agent_mapping_v1
 ```
 
+Value specs such as `event_id`, `timestamp`, `layer`, `source.type`,
+`source.path`, destination `layer`, and destination `path` may use `fields` when
+agent runtimes use different names for the same concept. The adapter checks the
+paths in order and uses the first path that exists and resolves to a non-empty
+string or scalar:
+
+```yaml
+timestamp:
+  fields:
+    - timestamp
+    - created_at
+layer:
+  fields:
+    - kind
+    - event_type
+  map:
+    message.user: user_message
+    tool.done: tool_output
+event_id:
+  fields:
+    - event.id
+    - id
+  required: false
+  fallback_prefix: callback_evt
+```
+
+Do not define both `field` and `fields` in the same value spec. Use `default`
+for an optional constant fallback and `fallback_prefix` for generated event IDs.
+
+The repository includes a second callback-style mapping fixture that exercises
+multi-field fallbacks across event IDs, timestamps, layers, source nodes, and
+provider destinations:
+
+```bash
+phi-boundary-gate convert-trace \
+  --input samples/external_traces/callback_agent_run.jsonl \
+  --mapping samples/trace_mappings/callback_agent.yml \
+  --out /tmp/callback-agent-normalized.jsonl
+```
+
 Supported output layers are:
 
 - `user_message`
@@ -178,8 +218,9 @@ agent.node
 ```
 
 It does not support filters, wildcards, negative indexes, quoted keys, or full
-JSONPath. If an external framework needs those features, add a project-specific
-preprocessor or adapter before writing normalized trace events.
+JSONPath. `fields` is an ordered fallback list of simple field paths, not a query
+language. If an external framework needs JSONPath features, add a
+project-specific preprocessor or adapter before writing normalized trace events.
 
 ## Validation Contract
 
@@ -189,6 +230,7 @@ events. It validates:
 - mapping version
 - required top-level fields
 - value spec shapes
+- multi-field fallback shapes
 - content field shapes
 - layer alias outputs
 - destination layer outputs

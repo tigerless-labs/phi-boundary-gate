@@ -259,17 +259,25 @@ def _validate_value_spec(
         return
     if not isinstance(spec, dict):
         raise MappingError(f"{label} must be a field string or object")
-    allowed_keys = {"field", "value", "default", "required", "map"}
+    allowed_keys = {"field", "fields", "value", "default", "required", "map"}
     if allow_fallback_prefix:
         allowed_keys.add("fallback")
         allowed_keys.add("fallback_prefix")
     unknown = sorted(set(spec) - allowed_keys)
     if unknown:
         raise MappingError(f"{label} has unsupported key(s): {', '.join(unknown)}")
+    if "field" in spec and "fields" in spec:
+        raise MappingError(f"{label} must not define both field and fields")
     if "field" in spec:
         _validate_field_path(_expect_string(spec["field"], f"{label}.field"), f"{label}.field")
-    elif "value" not in spec and "default" not in spec and not allow_empty:
-        raise MappingError(f"{label} must define field, value, or default")
+    if "fields" in spec:
+        fields = spec["fields"]
+        if not isinstance(fields, list) or not fields:
+            raise MappingError(f"{label}.fields must be a non-empty array")
+        for index, field in enumerate(fields):
+            _validate_field_path(_expect_string(field, f"{label}.fields[{index}]"), f"{label}.fields[{index}]")
+    if "field" not in spec and "fields" not in spec and "value" not in spec and "default" not in spec and not allow_empty:
+        raise MappingError(f"{label} must define field, fields, value, or default")
     if "value" in spec:
         _expect_string(spec["value"], f"{label}.value")
     if "default" in spec:
@@ -545,11 +553,24 @@ def _optional_string_value(
         raise MappingError(f"{label} mapping must be a field string or object")
     if "value" in spec:
         return _expect_string(spec["value"], f"{label}.value")
-    if "field" not in spec:
+    if "field" not in spec and "fields" not in spec:
         default = spec.get("default", fallback)
         if default is None:
             return None
         return _expect_string(default, f"{label}.default")
+    if "fields" in spec:
+        value = _value_from_fields(raw, spec, input_path, line_number, label)
+        if value is not None:
+            return value
+        default = spec.get("default")
+        if default is not None:
+            return _expect_string(default, f"{label}.default")
+        if fallback is not None:
+            return fallback
+        if spec.get("required", True):
+            fields = ", ".join(repr(field) for field in spec["fields"])
+            raise MappingError(f"{input_path}:{line_number}: missing any field for {label}: {fields}")
+        return None
     field = _expect_string(spec["field"], f"{label}.field")
     required = spec.get("required", True)
     if not isinstance(required, bool):
@@ -567,6 +588,28 @@ def _optional_string_value(
         if default is None:
             return None
     return _string_from_value(value, input_path, line_number, label)
+
+
+def _value_from_fields(
+    raw: dict[str, Any],
+    spec: dict[str, Any],
+    input_path: Path,
+    line_number: int,
+    label: str,
+) -> str | None:
+    fields = spec["fields"]
+    if not isinstance(fields, list) or not fields:
+        raise MappingError(f"{label}.fields must be a non-empty array")
+    for index, candidate in enumerate(fields):
+        field = _expect_string(candidate, f"{label}.fields[{index}]")
+        try:
+            value = _value_at(raw, field, input_path, line_number, label)
+        except MappingError:
+            continue
+        text = _string_from_value(value, input_path, line_number, label)
+        if text:
+            return text
+    return None
 
 
 def _value_at(raw: dict[str, Any], field: str, input_path: Path, line_number: int, label: str) -> Any:

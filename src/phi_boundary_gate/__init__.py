@@ -1,6 +1,6 @@
 """PHI boundary gating, redaction, and audit reporting."""
 
-__version__ = "0.5.4"
+__version__ = "0.5.5"
 
 from .adapters import TraceAdapter, TraceMapping, load_external_trace, load_trace_mapping, validate_trace_mapping, write_converted_trace
 from .api import GuardDecision, GuardMode, ScanFinding, guard_text, redact_text, scan_text
