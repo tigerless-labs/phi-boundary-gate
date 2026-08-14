@@ -16,7 +16,8 @@ framework.
 phi-boundary-gate convert-trace \
   --input samples/external_traces/generic_agent_run.jsonl \
   --mapping samples/trace_mappings/generic_agent.yml \
-  --out /tmp/phi-normalized-trace.jsonl
+  --out /tmp/phi-normalized-trace.jsonl \
+  --diagnostics /tmp/phi-adapter-diagnostics.json
 
 phi-boundary-gate validate-trace --trace /tmp/phi-normalized-trace.jsonl
 
@@ -44,6 +45,19 @@ phi-boundary-gate convert-trace \
   --stdout > /tmp/phi-normalized-trace.jsonl
 ```
 
+Use `--diagnostics` while tuning a mapping. The diagnostics file summarizes the
+converted event count, output layers, destination layers, content paths that
+produced text, optional content paths that never matched, generated event IDs,
+and value-spec fallback fields selected during conversion:
+
+```bash
+phi-boundary-gate convert-trace \
+  --input samples/external_traces/callback_agent_run.jsonl \
+  --mapping samples/trace_mappings/callback_agent.yml \
+  --out /tmp/callback-agent-normalized.jsonl \
+  --diagnostics /tmp/callback-agent-diagnostics.json
+```
+
 Normalized traces may contain raw PHI when the external input contains raw PHI.
 Do not commit them. Prefer short-lived paths, restricted artifact retention, or
 an immediate `scan-trace --redacted-trace` step.
@@ -66,10 +80,12 @@ Function-style helpers are also public:
 ```python
 from pathlib import Path
 
-from phi_boundary_gate import load_external_trace, write_converted_trace
+from phi_boundary_gate import build_conversion_diagnostics, load_external_trace, load_trace_mapping, write_converted_trace
 
 events = load_external_trace(Path("raw-agent-events.jsonl"), Path("config/phi-trace-map.yml"))
 write_converted_trace(Path("raw-agent-events.jsonl"), Path("config/phi-trace-map.yml"), Path("/tmp/phi-normalized-trace.jsonl"))
+mapping = load_trace_mapping(Path("config/phi-trace-map.yml"))
+diagnostics = build_conversion_diagnostics(Path("raw-agent-events.jsonl"), mapping)
 ```
 
 The returned objects are regular `TraceEvent` instances and can be passed to
@@ -240,6 +256,10 @@ events. It validates:
 `validate-trace` checks normalized JSONL events after conversion. A mapping can be
 valid while still failing conversion if a required external event field is
 missing in a particular input line.
+
+Diagnostics are conversion-time summaries, not schema validation. Use them to see
+whether fallback fields and optional content fields are actually exercised by a
+sample trace before relying on the mapping in CI.
 
 ## Content Fields
 

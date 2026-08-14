@@ -86,7 +86,8 @@ scanning:
 phi-boundary-gate convert-trace \
   --input raw-agent-events.jsonl \
   --mapping config/phi-trace-map.yml \
-  --out normalized-trace.jsonl
+  --out normalized-trace.jsonl \
+  --diagnostics adapter-diagnostics.json
 
 phi-boundary-gate validate-mapping --mapping config/phi-trace-map.yml
 phi-boundary-gate validate-trace --trace normalized-trace.jsonl
@@ -118,14 +119,14 @@ package index:
 
 ```bash
 python3 -m pip install \
-  "phi-boundary-gate @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.5.5"
+  "phi-boundary-gate @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.5.6"
 ```
 
 The NER extra works with the same fallback:
 
 ```bash
 python3 -m pip install \
-  "phi-boundary-gate[ner] @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.5.5"
+  "phi-boundary-gate[ner] @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.5.6"
 ```
 
 For short-term testing, a commit SHA is also valid:
@@ -152,8 +153,8 @@ Release publishing uses GitHub Actions and PyPI Trusted Publishing:
 5. Create and push the release tag:
 
 ```bash
-git tag v0.5.5
-git push origin v0.5.5
+git tag v0.5.6
+git push origin v0.5.6
 ```
 
 The tag workflow publishes the same built package shape to PyPI.

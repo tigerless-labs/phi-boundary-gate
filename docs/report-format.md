@@ -7,6 +7,8 @@ The CLI writes both Markdown and JSON reports.
 Top-level fields:
 
 - `schema_version`: Report schema version. The current report writes `2`.
+- `report_value_mode`: How matched values are displayed: `raw`, `redacted`, or
+  `hashed`.
 - `trace_path`: Input trace path.
 - `policy_path`: Input policy path.
 - `summary`: Finding counts by disposition and risk.
@@ -21,7 +23,9 @@ Each finding contains:
 - `event_id`: Source trace event ID.
 - `layer`: Context layer where the candidate was found.
 - `category`: Candidate category.
-- `value`: Matched synthetic value.
+- `value`: Display value for the configured `report_value_mode`.
+- `value_display`: Same display value used by Markdown rendering.
+- `value_hash`: Stable `sha256:` hash of the matched value.
 - `span`: Character offsets in the event content.
 - `confidence`: Detector confidence from `0` to `1`.
 - `reason`: Detector reason.
@@ -32,11 +36,14 @@ Each finding contains:
 
 ## Boundary Exposure Object
 
-Boundary exposures group repeated findings by `category` and `value`. Each object contains:
+Boundary exposures group repeated findings by raw candidate value before report
+display values are applied. Each object contains:
 
 - `exposure_id`: Stable report-local identifier.
 - `category`: Candidate category.
-- `value`: Matched synthetic value.
+- `value`: Display value for the configured `report_value_mode`.
+- `value_display`: Same display value used by Markdown rendering.
+- `value_hash`: Stable `sha256:` hash of the matched value.
 - `finding_ids`: Findings included in the group.
 - `event_ids`: Trace events where the candidate appeared.
 - `layers_seen`: Context layers in first-seen order.
@@ -63,3 +70,5 @@ The Markdown report contains:
 Reports must describe matches as PHI candidates, not confirmed PHI. Built-in
 regex rules and optional local Presidio NER can both produce false positives or
 false negatives, so findings still require caller controls and human review.
+Use `scan-trace --report-values redacted` or `--report-values hashed` when
+reports may be stored outside a PHI-approved location.

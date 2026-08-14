@@ -213,7 +213,7 @@ Function-style helpers remain available:
 ```python
 from pathlib import Path
 
-from phi_boundary_gate import load_external_trace, write_converted_trace
+from phi_boundary_gate import build_conversion_diagnostics, load_external_trace, load_trace_mapping, write_converted_trace
 
 events = load_external_trace(
     Path("raw-agent-events.jsonl"),
@@ -225,10 +225,20 @@ write_converted_trace(
     Path("config/phi-trace-map.yml"),
     Path("/tmp/phi-normalized-trace.jsonl"),
 )
+
+diagnostics = build_conversion_diagnostics(
+    Path("raw-agent-events.jsonl"),
+    load_trace_mapping(Path("config/phi-trace-map.yml")),
+)
 ```
 
 The returned `TraceEvent` objects use the same shape as `load_trace()`. See
 [Trace Adapters](adapters.md) for the mapping schema and CLI flow.
+
+When building reports for real or approved non-synthetic traces, prefer
+`build_report(..., report_value_mode="redacted")` or
+`report_value_mode="hashed"` so stored Markdown and JSON reports do not display
+raw matched values. The default remains `raw` for compatibility.
 
 Runnable SDK and adapter examples are kept in [../examples](../examples), and CI
 executes them against the installed package smoke path.

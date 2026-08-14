@@ -38,7 +38,8 @@ phi-boundary-gate validate-mapping \
 phi-boundary-gate convert-trace \
   --input raw-agent-events.jsonl \
   --mapping config/phi-trace-map.yml \
-  --out normalized-trace.jsonl
+  --out normalized-trace.jsonl \
+  --diagnostics adapter-diagnostics.json
 ```
 
 ## Policy Validation

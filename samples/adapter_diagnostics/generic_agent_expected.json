@@ -1,0 +1,62 @@
+{
+  "content_paths_used": {
+    "log.message": 1,
+    "memory.value": 1,
+    "messages.0.content": 1,
+    "prompt.system": 1,
+    "prompt.user": 1,
+    "retrieval.chunk_text": 1,
+    "tool.response.address": 1,
+    "tool.response.claim_id": 1,
+    "tool.response.member_id": 1,
+    "tool.response.summary": 1
+  },
+  "destination_layers": {
+    "model_input": 3,
+    "model_provider": 1
+  },
+  "events_by_layer": {
+    "debug_log": 1,
+    "memory": 1,
+    "model_input": 1,
+    "rag_context": 1,
+    "tool_output": 1,
+    "user_message": 1
+  },
+  "external_format": "generic_jsonl",
+  "field_fallbacks": {
+    "destinations[0].layer": {
+      "routing.next_layer": 3
+    },
+    "destinations[0].path": {
+      "routing.next_path": 3
+    },
+    "destinations[1].layer": {
+      "provider.sink": 1
+    },
+    "destinations[1].path": {
+      "provider.request_path": 1
+    },
+    "event_id": {
+      "id": 6
+    },
+    "layer": {
+      "event_type": 6
+    },
+    "source.path": {
+      "agent.node": 6
+    },
+    "source.type": {
+      "agent.name": 6
+    },
+    "timestamp": {
+      "created_at": 6
+    }
+  },
+  "generated_event_id_count": 0,
+  "input_path": "samples/external_traces/generic_agent_run.jsonl",
+  "mapping_version": 1,
+  "optional_content_paths_never_used": [],
+  "schema_version": 1,
+  "total_events": 6
+}

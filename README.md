@@ -1,7 +1,7 @@
 <h1 align="center">PHI Boundary Gate</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/release-v0.5.5-brightgreen.svg" alt="release v0.5.5" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
+  <img src="https://img.shields.io/badge/release-v0.5.6-brightgreen.svg" alt="release v0.5.6" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
 </p>
 
 **PHI Boundary Gate** detects, gates, redacts, and reports PHI candidate
@@ -149,7 +149,8 @@ names for event IDs, timestamps, layers, source nodes, or provider sinks:
 phi-boundary-gate convert-trace \
   --input samples/external_traces/generic_agent_run.jsonl \
   --mapping samples/trace_mappings/generic_agent.yml \
-  --out /tmp/phi-normalized-trace.jsonl
+  --out /tmp/phi-normalized-trace.jsonl \
+  --diagnostics /tmp/phi-adapter-diagnostics.json
 
 phi-boundary-gate validate-mapping \
   --mapping samples/trace_mappings/generic_agent.yml
@@ -161,6 +162,7 @@ phi-boundary-gate scan-trace \
   --policy samples/policies/default.yml \
   --out /tmp/phi-normalized-report.md \
   --json /tmp/phi-normalized-report.json \
+  --report-values redacted \
   --redacted-trace /tmp/phi-normalized-redacted.jsonl
 ```
 
@@ -228,8 +230,8 @@ development and documentation.
 - Treat every detector result as a PHI candidate, not confirmed PHI.
 - Keep real PHI, raw provider payloads, raw logs, and reports containing real PHI
   out of source control.
-- Remember that Markdown and JSON reports include matched values unless the caller
-  keeps reports synthetic or adds its own report-value redaction workflow.
+- Use `scan-trace --report-values redacted` or `--report-values hashed` when
+  scanning real or approved non-synthetic traces.
 - Enable Presidio only in environments approved to process the text locally; it
   adds local candidate spans but does not replace policy review.
 - Use `guard_compliance` before routing PHI-bearing text to a covered service; the
@@ -247,6 +249,8 @@ Each finding includes the matched value, category, span, detector confidence,
 trace source, trace destinations, policy disposition, risk level, and suggested
 redaction value. Boundary exposures group the same PHI candidate across events,
 then sort by the worst policy disposition so violations rise to the top.
+Use `--report-values redacted` or `--report-values hashed` to keep Markdown and
+JSON reports from displaying raw matched values.
 
 When `--redacted-trace` is provided, the CLI also writes a JSONL trace whose
 `content` fields use policy redaction placeholders. Exact repeats of a detected
@@ -402,7 +406,7 @@ Run the tests:
 PYTHONPATH=src python3 -m unittest discover -s tests
 ```
 
-Current release: `v0.5.5`.
+Current release: `v0.5.6`.
 
 ## Limits
 
