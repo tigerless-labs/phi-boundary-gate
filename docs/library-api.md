@@ -1,6 +1,8 @@
 # Library API
 
-The package can be imported by other Python projects that need lightweight PHI candidate scanning, policy decisions, redaction, or model-call guard checks.
+The package can be imported by other Python projects that need lightweight PHI
+candidate scanning, policy decisions, redaction, model-call guard checks, or
+path-aware trace audit reports.
 
 ## Load Policy
 
@@ -43,11 +45,73 @@ audit_payload = decision.to_safe_dict()
 from the current working directory. The config points to the consuming project's
 PHI policy and optional compliance policy.
 
+## Trace Audit SDK
+
+Use `PhiBoundaryGate.audit_trace()` when another service already has a normalized
+trace JSONL file:
+
+```python
+from phi_boundary_gate import PhiBoundaryGate
+
+gate = PhiBoundaryGate.from_project()
+result = gate.audit_trace("normalized-trace.jsonl", report_value_mode="redacted")
+
+if result.has_violations:
+    raise RuntimeError("PHI boundary violation candidates found")
+
+result.write_json("phi-report.json")
+result.write_markdown("phi-report.md")
+payload = result.to_dict()
+```
+
+Use `PhiBoundaryGate.audit_events()` when the calling project already has
+`TraceEvent` objects in memory:
+
+```python
+from phi_boundary_gate import PhiBoundaryGate, TraceEvent
+
+gate = PhiBoundaryGate.from_project()
+events = [
+    TraceEvent(
+        event_id="evt_001",
+        timestamp="2026-08-14T10:00:00Z",
+        layer="tool_output",
+        content='{"member_id":"MBR-SYN-8842"}',
+        metadata={"external_content_paths": ["payload"]},
+    )
+]
+
+result = gate.audit_events(events, report_value_mode="hashed")
+assert result.findings[0]["content_path"] == "$.member_id"
+assert result.findings[0]["external_content_path"] == "payload.member_id"
+```
+
+Function-style helpers are available when callers manage policy loading
+themselves:
+
+```python
+from pathlib import Path
+
+from phi_boundary_gate import audit_trace, load_policy
+
+policy = load_policy(Path("config/phi-policy.yml"))
+result = audit_trace(
+    "normalized-trace.jsonl",
+    policy,
+    policy_path="config/phi-policy.yml",
+    report_value_mode="redacted",
+)
+```
+
+`AuditResult` wraps the report dictionary and exposes `summary`, `findings`,
+`boundary_exposures`, `has_findings`, `has_violations`, `to_dict()`,
+`to_markdown()`, `write_json()`, and `write_markdown()`.
+
 ## Stable Exceptions
 
 Package-level validation and integration errors inherit from
 `PhiBoundaryGateError`, which also inherits from `ValueError` for compatibility
-with earlier `0.5.x` callers.
+with earlier callers.
 
 ```python
 from phi_boundary_gate import PhiBoundaryGateError, PolicyError, ProjectConfigError, TraceMappingError
@@ -190,7 +254,8 @@ For a model-routing service, call `guard_text(..., layer="model_input")` before 
 
 For an agent runtime, call `guard_text` around trace and log boundaries such as user messages, tool results, assembled model input, and compaction memory. Use `redacted_text` for ordinary logs and keep full boundary reports for synthetic or approved traces only.
 
-For CI or offline audit, keep `mode="report_only"` and use the CLI report outputs.
+For CI or offline audit, keep `mode="report_only"` for text guards and use
+`audit_trace()`, `audit_events()`, or the CLI report outputs for full traces.
 
 ## External Trace Conversion
 
@@ -236,7 +301,9 @@ The returned `TraceEvent` objects use the same shape as `load_trace()`. See
 [Trace Adapters](adapters.md) for the mapping schema and CLI flow.
 
 When building reports for real or approved non-synthetic traces, prefer
-`build_report(..., report_value_mode="redacted")` or
+`audit_trace(..., report_value_mode="redacted")`,
+`audit_events(..., report_value_mode="redacted")`,
+`build_report(..., report_value_mode="redacted")`, or
 `report_value_mode="hashed"` so stored Markdown and JSON reports do not display
 raw matched values. The default remains `raw` for compatibility.
 

@@ -5,7 +5,7 @@ does not require those projects to adopt its trace schema internally. Instead,
 use `convert-trace` to normalize generic JSONL into the package trace schema,
 then run `validate-trace` and `scan-trace`.
 
-Mapping v1 is the supported generic JSONL mapping contract for the `0.5.x`
+Mapping v1 is the supported generic JSONL mapping contract for the `0.6.x`
 release line. The adapter is intentionally small: it supports common JSONL event
 logs, but it is not a full JSONPath engine and does not try to model every agent
 framework.

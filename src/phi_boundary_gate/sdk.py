@@ -4,9 +4,12 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .api import GuardDecision, GuardMode, ScanFinding, guard_text, redact_text, scan_text
+from .audit import AuditResult, audit_events, audit_trace
 from .compliance import ComplianceContext, ComplianceDecision, CompliancePolicy, guard_compliance
 from .policy import Policy, load_policy
 from .project import ProjectConfig, discover_project_config
+from .report import ReportValueMode
+from .trace import TraceEvent
 
 
 @dataclass(frozen=True)
@@ -61,6 +64,38 @@ class PhiBoundaryGate:
     def redact_for_log(self, text: str) -> str:
         return self.redact_for_layer(text, "debug_log")
 
+    def audit_events(
+        self,
+        events: list[TraceEvent],
+        *,
+        trace_path: Path | str = "<events>",
+        policy_path: Path | str | None = None,
+        report_value_mode: ReportValueMode = "raw",
+    ) -> AuditResult:
+        return audit_events(
+            events,
+            self.policy,
+            trace_path=trace_path,
+            policy_path=policy_path or self._policy_path(),
+            enable_presidio=self.enable_presidio,
+            report_value_mode=report_value_mode,
+        )
+
+    def audit_trace(
+        self,
+        trace_path: Path | str,
+        *,
+        policy_path: Path | str | None = None,
+        report_value_mode: ReportValueMode = "raw",
+    ) -> AuditResult:
+        return audit_trace(
+            trace_path,
+            self.policy,
+            policy_path=policy_path or self._policy_path(),
+            enable_presidio=self.enable_presidio,
+            report_value_mode=report_value_mode,
+        )
+
     def guard_compliance(
         self,
         text: str,
@@ -83,3 +118,8 @@ class PhiBoundaryGate:
             context=context,
             enable_presidio=self.enable_presidio,
         )
+
+    def _policy_path(self) -> Path | str:
+        if self.project_config is not None:
+            return self.project_config.policy_path
+        return "<policy>"

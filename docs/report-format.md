@@ -6,9 +6,10 @@ The CLI writes both Markdown and JSON reports.
 
 Top-level fields:
 
-- `schema_version`: Report schema version. The current report writes `2`.
+- `schema_version`: Report schema version. The current report writes `3`.
 - `report_value_mode`: How matched values are displayed: `raw`, `redacted`, or
   `hashed`.
+- `finding_schema`: Finding schema family. Schema v3 writes `path-aware`.
 - `trace_path`: Input trace path.
 - `policy_path`: Input policy path.
 - `summary`: Finding counts by disposition and risk.
@@ -26,7 +27,13 @@ Each finding contains:
 - `value`: Display value for the configured `report_value_mode`.
 - `value_display`: Same display value used by Markdown rendering.
 - `value_hash`: Stable `sha256:` hash of the matched value.
-- `span`: Character offsets in the event content.
+- `span`: Character offsets in the scanned text segment. For structured JSON
+  content, this is the scalar leaf text, not the whole event content string.
+- `content_path`: JSON-style path to the scanned leaf when event `content` is a
+  JSON object or array string. Plain text events use `null`.
+- `external_content_path`: Adapter-facing path when the trace event has exactly
+  one `metadata.external_content_paths` base and it can be combined with
+  `content_path`.
 - `confidence`: Detector confidence from `0` to `1`.
 - `reason`: Detector reason.
 - `source`: Trace source object.
@@ -47,6 +54,10 @@ display values are applied. Each object contains:
 - `finding_ids`: Findings included in the group.
 - `event_ids`: Trace events where the candidate appeared.
 - `layers_seen`: Context layers in first-seen order.
+- `content_paths_seen`: Unique structured content paths where the candidate was
+  seen.
+- `external_content_paths_seen`: Unique adapter-facing paths where the candidate
+  was seen.
 - `first_seen_event_id`: First event where the candidate appeared.
 - `worst_disposition`: Most severe policy disposition for the candidate.
 - `worst_layer`: Layer where the worst disposition appeared first.
@@ -63,7 +74,20 @@ The Markdown report contains:
 - Boundary exposure summary.
 - Findings table.
 - Per-finding source and destination details.
+- Per-finding content path and external content path details.
 - Review note that all findings are candidates and require human review.
+
+## Path-Aware Structured Content
+
+Schema v3 keeps plain text traces compatible and adds precision for structured
+payloads. If an event `content` value is a JSON object or array encoded as a
+string, the scanner walks scalar leaves and records paths such as
+`$.member_id`, `$.tool.response.claim_id`, or `$.messages[0].content`.
+
+When an adapter records a single raw-payload base path in
+`metadata.external_content_paths`, reports also include an `external_content_path`
+such as `payload.tool.response.claim_id`. Multiple external bases remain
+uncombined because a finding cannot be attributed to one raw field safely.
 
 ## Candidate Language
 
