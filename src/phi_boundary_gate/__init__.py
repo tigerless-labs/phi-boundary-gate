@@ -1,8 +1,17 @@
 """PHI boundary gating, redaction, and audit reporting."""
 
-__version__ = "0.5.5"
+__version__ = "0.5.6"
 
-from .adapters import TraceAdapter, TraceMapping, load_external_trace, load_trace_mapping, validate_trace_mapping, write_converted_trace
+from .adapters import (
+    TraceAdapter,
+    TraceMapping,
+    build_conversion_diagnostics,
+    load_external_trace,
+    load_trace_mapping,
+    validate_trace_mapping,
+    write_conversion_diagnostics,
+    write_converted_trace,
+)
 from .api import GuardDecision, GuardMode, ScanFinding, guard_text, redact_text, scan_text
 from .compliance import (
     ComplianceContext,
@@ -38,6 +47,7 @@ __all__ = [
     "TraceEvent",
     "TraceMapping",
     "TraceMappingError",
+    "build_conversion_diagnostics",
     "build_report",
     "check_project_config",
     "discover_project_config",
@@ -55,6 +65,7 @@ __all__ = [
     "render_markdown",
     "scan_text",
     "validate_trace_mapping",
+    "write_conversion_diagnostics",
     "write_json_report",
     "write_markdown_report",
     "write_converted_trace",

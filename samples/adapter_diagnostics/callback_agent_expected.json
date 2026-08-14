@@ -1,0 +1,56 @@
+{
+  "content_paths_used": {
+    "data.result.summary": 1,
+    "message.content": 1,
+    "payload.text": 1,
+    "request.messages.0.content": 1
+  },
+  "destination_layers": {
+    "model_input": 3,
+    "model_provider": 1
+  },
+  "events_by_layer": {
+    "model_input": 1,
+    "rag_context": 1,
+    "tool_output": 1,
+    "user_message": 1
+  },
+  "external_format": "generic_jsonl",
+  "field_fallbacks": {
+    "destinations[0].layer": {
+      "next.layer": 3,
+      "provider.sink": 1
+    },
+    "destinations[0].path": {
+      "next.path": 3,
+      "request.path": 1
+    },
+    "event_id": {
+      "<generated>": 1,
+      "event.id": 1,
+      "id": 2
+    },
+    "layer": {
+      "event_type": 3,
+      "kind": 1
+    },
+    "source.path": {
+      "component.path": 3,
+      "node.path": 1
+    },
+    "source.type": {
+      "component.name": 3,
+      "node.name": 1
+    },
+    "timestamp": {
+      "created_at": 3,
+      "timestamp": 1
+    }
+  },
+  "generated_event_id_count": 1,
+  "input_path": "samples/external_traces/callback_agent_run.jsonl",
+  "mapping_version": 1,
+  "optional_content_paths_never_used": [],
+  "schema_version": 1,
+  "total_events": 4
+}

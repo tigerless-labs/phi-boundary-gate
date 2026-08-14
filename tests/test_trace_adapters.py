@@ -14,7 +14,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from phi_boundary_gate import TraceAdapter, TraceMappingError  # noqa: E402
-from phi_boundary_gate.adapters import load_external_trace, write_converted_trace  # noqa: E402
+from phi_boundary_gate.adapters import build_conversion_diagnostics, load_trace_mapping, write_converted_trace  # noqa: E402
+from phi_boundary_gate.adapters import load_external_trace  # noqa: E402
 from phi_boundary_gate.cli import main  # noqa: E402
 from phi_boundary_gate.policy import load_policy  # noqa: E402
 from phi_boundary_gate.report import build_report  # noqa: E402
@@ -88,6 +89,26 @@ class TraceAdaptersTest(unittest.TestCase):
                 output_path.read_text(encoding="utf-8"),
                 (ROOT / "samples/normalized_traces/callback_agent_expected.jsonl").read_text(encoding="utf-8"),
             )
+
+    def test_callback_agent_diagnostics_summarize_mapping_usage(self) -> None:
+        diagnostics = build_conversion_diagnostics(
+            Path("samples/external_traces/callback_agent_run.jsonl"),
+            load_trace_mapping(ROOT / "samples/trace_mappings/callback_agent.yml"),
+        )
+
+        self.assertEqual(diagnostics["total_events"], 4)
+        self.assertEqual(diagnostics["events_by_layer"], {"model_input": 1, "rag_context": 1, "tool_output": 1, "user_message": 1})
+        self.assertEqual(diagnostics["destination_layers"], {"model_input": 3, "model_provider": 1})
+        self.assertEqual(diagnostics["generated_event_id_count"], 1)
+        self.assertEqual(diagnostics["field_fallbacks"]["event_id"], {"<generated>": 1, "event.id": 1, "id": 2})
+        self.assertEqual(diagnostics["field_fallbacks"]["timestamp"], {"created_at": 3, "timestamp": 1})
+        self.assertEqual(diagnostics["field_fallbacks"]["layer"], {"event_type": 3, "kind": 1})
+        self.assertEqual(diagnostics["optional_content_paths_never_used"], [])
+        self.assertEqual(diagnostics["content_paths_used"]["request.messages.0.content"], 1)
+        self.assertEqual(
+            diagnostics,
+            json.loads((ROOT / "samples/adapter_diagnostics/callback_agent_expected.json").read_text(encoding="utf-8")),
+        )
 
     def test_trace_adapter_facade_converts_and_summarizes_mapping(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -301,23 +322,33 @@ class TraceAdaptersTest(unittest.TestCase):
     def test_cli_convert_trace_and_validate_trace(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             output_path = Path(tmp) / "normalized.jsonl"
+            diagnostics_path = Path(tmp) / "diagnostics.json"
 
             with redirect_stdout(StringIO()) as stdout:
                 exit_code = main(
                     [
                         "convert-trace",
                         "--input",
-                        str(ROOT / "samples/external_traces/generic_agent_run.jsonl"),
+                        "samples/external_traces/generic_agent_run.jsonl",
                         "--mapping",
-                        str(ROOT / "samples/trace_mappings/generic_agent.yml"),
+                        "samples/trace_mappings/generic_agent.yml",
                         "--out",
                         str(output_path),
+                        "--diagnostics",
+                        str(diagnostics_path),
                     ]
                 )
 
             self.assertEqual(exit_code, 0)
             self.assertIn("Wrote 6 normalized event(s)", stdout.getvalue())
             self.assertEqual(len(load_trace(output_path)), 6)
+            diagnostics = json.loads(diagnostics_path.read_text(encoding="utf-8"))
+            self.assertEqual(diagnostics["total_events"], 6)
+            self.assertEqual(diagnostics["field_fallbacks"]["event_id"], {"id": 6})
+            self.assertEqual(
+                diagnostics,
+                json.loads((ROOT / "samples/adapter_diagnostics/generic_agent_expected.json").read_text(encoding="utf-8")),
+            )
 
             with redirect_stdout(StringIO()) as validate_stdout:
                 self.assertEqual(main(["validate-trace", "--trace", str(output_path)]), 0)

@@ -19,7 +19,7 @@ Configure PyPI Trusted Publishing before the first release:
 
 Trusted Publishing avoids long-lived PyPI API tokens in GitHub Secrets.
 
-## v0.5.5
+## v0.5.6
 
 Before merging a release PR:
 
@@ -40,6 +40,20 @@ PYTHONPATH=src python3 -m phi_boundary_gate.cli scan-trace \
   --policy samples/policies/default.yml \
   --out /tmp/phi-expanded-report.md \
   --json /tmp/phi-expanded-report.json
+PYTHONPATH=src python3 -m phi_boundary_gate.cli scan-trace \
+  --trace samples/traces/claim_agent_minimal.jsonl \
+  --policy samples/policies/default.yml \
+  --out /tmp/phi-redacted-report.md \
+  --json /tmp/phi-redacted-report.json \
+  --report-values redacted
+! grep -q 'MBR-SYN-8842' /tmp/phi-redacted-report.md /tmp/phi-redacted-report.json
+PYTHONPATH=src python3 -m phi_boundary_gate.cli scan-trace \
+  --trace samples/traces/claim_agent_minimal.jsonl \
+  --policy samples/policies/default.yml \
+  --out /tmp/phi-hashed-report.md \
+  --json /tmp/phi-hashed-report.json \
+  --report-values hashed
+! grep -q 'MBR-SYN-8842' /tmp/phi-hashed-report.md /tmp/phi-hashed-report.json
 PYTHONPATH=src python3 tools/trace_corpus_report.py \
   --traces samples/traces \
   --expectations samples/trace_expectations \
@@ -49,13 +63,17 @@ diff -u reports/trace-corpus-coverage.json /tmp/trace-corpus-coverage.json
 PYTHONPATH=src python3 -m phi_boundary_gate.cli convert-trace \
   --input samples/external_traces/generic_agent_run.jsonl \
   --mapping samples/trace_mappings/generic_agent.yml \
-  --out /tmp/generic-agent-normalized.jsonl
+  --out /tmp/generic-agent-normalized.jsonl \
+  --diagnostics /tmp/generic-agent-diagnostics.json
 diff -u samples/normalized_traces/generic_agent_expected.jsonl /tmp/generic-agent-normalized.jsonl
+diff -u samples/adapter_diagnostics/generic_agent_expected.json /tmp/generic-agent-diagnostics.json
 PYTHONPATH=src python3 -m phi_boundary_gate.cli convert-trace \
   --input samples/external_traces/callback_agent_run.jsonl \
   --mapping samples/trace_mappings/callback_agent.yml \
-  --out /tmp/callback-agent-normalized.jsonl
+  --out /tmp/callback-agent-normalized.jsonl \
+  --diagnostics /tmp/callback-agent-diagnostics.json
 diff -u samples/normalized_traces/callback_agent_expected.jsonl /tmp/callback-agent-normalized.jsonl
+diff -u samples/adapter_diagnostics/callback_agent_expected.json /tmp/callback-agent-diagnostics.json
 PYTHONPATH=src python3 -m phi_boundary_gate.cli validate-mapping \
   --mapping samples/trace_mappings/generic_agent.yml
 PYTHONPATH=src python3 -m phi_boundary_gate.cli validate-mapping \
@@ -72,38 +90,42 @@ PYTHONPATH=src python3 examples/trace_mapping_pipeline.py \
 diff -u samples/normalized_traces/generic_agent_expected.jsonl /tmp/generic-agent-normalized-example.jsonl
 python3 -m build
 python3 -m twine check dist/*
-python3 -m pip install --no-build-isolation --no-deps --target /tmp/phi-package-smoke-v055 .
-test -f /tmp/phi-package-smoke-v055/phi_boundary_gate/py.typed
-test -f /tmp/phi-package-smoke-v055/phi_boundary_gate/templates/phi-policy.yml
-test -f /tmp/phi-package-smoke-v055/phi_boundary_gate/adapters/generic_jsonl.py
-PYTHONPATH=/tmp/phi-package-smoke-v055 python3 -c "from phi_boundary_gate import __version__, PhiBoundaryGate, PhiBoundaryGateError, TraceAdapter, TraceMappingError, guard_text, guard_compliance, load_external_trace, validate_trace_mapping; print(__version__, PhiBoundaryGate.__name__, PhiBoundaryGateError.__name__, TraceAdapter.__name__, TraceMappingError.__name__, guard_text.__name__, guard_compliance.__name__, load_external_trace.__name__, validate_trace_mapping.__name__)"
-PYTHONPATH=/tmp/phi-package-smoke-v055 python3 examples/sdk_guard_model_input.py
-PYTHONPATH=/tmp/phi-package-smoke-v055 python3 examples/sdk_redact_logs.py
-PYTHONPATH=/tmp/phi-package-smoke-v055 python3 examples/trace_mapping_pipeline.py \
+python3 -m pip install --no-build-isolation --no-deps --target /tmp/phi-package-smoke-v056 .
+test -f /tmp/phi-package-smoke-v056/phi_boundary_gate/py.typed
+test -f /tmp/phi-package-smoke-v056/phi_boundary_gate/templates/phi-policy.yml
+test -f /tmp/phi-package-smoke-v056/phi_boundary_gate/adapters/generic_jsonl.py
+PYTHONPATH=/tmp/phi-package-smoke-v056 python3 -c "from phi_boundary_gate import __version__, PhiBoundaryGate, PhiBoundaryGateError, TraceAdapter, TraceMappingError, build_conversion_diagnostics, guard_text, guard_compliance, load_external_trace, validate_trace_mapping; print(__version__, PhiBoundaryGate.__name__, PhiBoundaryGateError.__name__, TraceAdapter.__name__, TraceMappingError.__name__, build_conversion_diagnostics.__name__, guard_text.__name__, guard_compliance.__name__, load_external_trace.__name__, validate_trace_mapping.__name__)"
+PYTHONPATH=/tmp/phi-package-smoke-v056 python3 examples/sdk_guard_model_input.py
+PYTHONPATH=/tmp/phi-package-smoke-v056 python3 examples/sdk_redact_logs.py
+PYTHONPATH=/tmp/phi-package-smoke-v056 python3 examples/trace_mapping_pipeline.py \
   --out /tmp/generic-agent-normalized-example-installed.jsonl
 diff -u samples/normalized_traces/generic_agent_expected.jsonl /tmp/generic-agent-normalized-example-installed.jsonl
-PYTHONPATH=/tmp/phi-package-smoke-v055 python3 -m phi_boundary_gate.cli --help
-PYTHONPATH=/tmp/phi-package-smoke-v055 python3 -m phi_boundary_gate.cli validate-mapping \
+PYTHONPATH=/tmp/phi-package-smoke-v056 python3 -m phi_boundary_gate.cli --help
+PYTHONPATH=/tmp/phi-package-smoke-v056 python3 -m phi_boundary_gate.cli validate-mapping \
   --mapping samples/trace_mappings/generic_agent.yml
-PYTHONPATH=/tmp/phi-package-smoke-v055 python3 -m phi_boundary_gate.cli validate-mapping \
+PYTHONPATH=/tmp/phi-package-smoke-v056 python3 -m phi_boundary_gate.cli validate-mapping \
   --mapping samples/trace_mappings/callback_agent.yml
-PYTHONPATH=/tmp/phi-package-smoke-v055 python3 -m phi_boundary_gate.cli convert-trace \
+PYTHONPATH=/tmp/phi-package-smoke-v056 python3 -m phi_boundary_gate.cli convert-trace \
   --input samples/external_traces/generic_agent_run.jsonl \
   --mapping samples/trace_mappings/generic_agent.yml \
-  --out /tmp/generic-agent-normalized-installed.jsonl
+  --out /tmp/generic-agent-normalized-installed.jsonl \
+  --diagnostics /tmp/generic-agent-diagnostics-installed.json
 diff -u samples/normalized_traces/generic_agent_expected.jsonl /tmp/generic-agent-normalized-installed.jsonl
-PYTHONPATH=/tmp/phi-package-smoke-v055 python3 -m phi_boundary_gate.cli convert-trace \
+diff -u samples/adapter_diagnostics/generic_agent_expected.json /tmp/generic-agent-diagnostics-installed.json
+PYTHONPATH=/tmp/phi-package-smoke-v056 python3 -m phi_boundary_gate.cli convert-trace \
   --input samples/external_traces/callback_agent_run.jsonl \
   --mapping samples/trace_mappings/callback_agent.yml \
-  --out /tmp/callback-agent-normalized-installed.jsonl
+  --out /tmp/callback-agent-normalized-installed.jsonl \
+  --diagnostics /tmp/callback-agent-diagnostics-installed.json
 diff -u samples/normalized_traces/callback_agent_expected.jsonl /tmp/callback-agent-normalized-installed.jsonl
+diff -u samples/adapter_diagnostics/callback_agent_expected.json /tmp/callback-agent-diagnostics-installed.json
 ```
 
 After checks pass on `main` and TestPyPI publishing succeeds:
 
 ```bash
-git tag v0.5.5
-git push origin v0.5.5
+git tag v0.5.6
+git push origin v0.5.6
 ```
 
 Downstream projects should prefer the PyPI package:
@@ -115,7 +137,7 @@ phi-boundary-gate>=0.5,<0.6
 Git tag fallback remains available when a package index cannot be used:
 
 ```text
-phi-boundary-gate @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.5.5
+phi-boundary-gate @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.5.6
 ```
 
 ## Notes

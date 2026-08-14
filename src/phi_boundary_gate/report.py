@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from .actions import DISPOSITION_RANK, recommended_boundary_action, redaction_action
 from .detectors import detect_candidates
 from .policy import Policy
 from .trace import TraceEvent
+
+ReportValueMode = Literal["raw", "redacted", "hashed"]
+REPORT_VALUE_MODES = {"raw", "redacted", "hashed"}
 
 
 def build_report(
@@ -17,7 +21,9 @@ def build_report(
     policy_path: Path,
     *,
     enable_presidio: bool = False,
+    report_value_mode: ReportValueMode = "raw",
 ) -> dict[str, Any]:
+    _validate_report_value_mode(report_value_mode)
     findings: list[dict[str, Any]] = []
 
     for event in events:
@@ -31,6 +37,8 @@ def build_report(
                     "layer": event.layer,
                     "category": candidate.category,
                     "value": candidate.value,
+                    "value_display": candidate.value,
+                    "value_hash": _value_hash(candidate.value),
                     "span": {"start": candidate.start, "end": candidate.end},
                     "confidence": candidate.confidence,
                     "reason": candidate.reason,
@@ -51,11 +59,12 @@ def build_report(
     boundary_exposures = _boundary_exposures(findings)
     return {
         "schema_version": 2,
+        "report_value_mode": report_value_mode,
         "trace_path": str(trace_path),
         "policy_path": str(policy_path),
         "summary": _summary(findings, boundary_exposures),
-        "boundary_exposures": boundary_exposures,
-        "findings": findings,
+        "boundary_exposures": _display_boundary_exposures(boundary_exposures, report_value_mode),
+        "findings": _display_findings(findings, report_value_mode),
     }
 
 
@@ -76,6 +85,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         "",
         f"- Trace: `{report['trace_path']}`",
         f"- Policy: `{report['policy_path']}`",
+        f"- Report value mode: `{report.get('report_value_mode', 'raw')}`",
         f"- Total PHI candidates: {summary['total_findings']}",
         f"- Boundary exposures: {summary['total_boundary_exposures']}",
         f"- Violations: {summary['by_disposition'].get('violation', 0)}",
@@ -103,7 +113,7 @@ def render_markdown(report: dict[str, Any]) -> str:
             "| {exposure_id} | {category} | `{value}` | {layers_seen} | {worst_disposition} | {worst_layer} | {action} |".format(
                 exposure_id=exposure["exposure_id"],
                 category=exposure["category"],
-                value=_escape_table(exposure["value"]),
+                value=_escape_table(exposure.get("value_display", exposure["value"])),
                 layers_seen=" -> ".join(exposure["layers_seen"]),
                 worst_disposition=exposure["worst_disposition"],
                 worst_layer=exposure["worst_layer"],
@@ -126,7 +136,7 @@ def render_markdown(report: dict[str, Any]) -> str:
                 event_id=finding["event_id"],
                 layer=finding["layer"],
                 category=finding["category"],
-                value=_escape_table(finding["value"]),
+                value=_escape_table(finding.get("value_display", finding["value"])),
                 disposition=finding["policy"]["disposition"],
                 risk=finding["policy"]["risk"],
                 redaction=finding["redaction"]["suggested_value"],
@@ -192,6 +202,9 @@ def _boundary_exposures(findings: list[dict[str, Any]]) -> list[dict[str, Any]]:
             {
                 "category": finding["category"],
                 "value": finding["value"],
+                "value_display": finding["value"],
+                "value_hash": finding["value_hash"],
+                "redaction": finding["redaction"]["suggested_value"],
                 "finding_ids": [],
                 "event_ids": [],
                 "layers_seen": [],
@@ -230,6 +243,61 @@ def _boundary_exposures(findings: list[dict[str, Any]]) -> list[dict[str, Any]]:
         )
 
     return sorted_exposures
+
+
+def _display_findings(findings: list[dict[str, Any]], report_value_mode: str) -> list[dict[str, Any]]:
+    return [_display_finding(finding, report_value_mode) for finding in findings]
+
+
+def _display_finding(finding: dict[str, Any], report_value_mode: str) -> dict[str, Any]:
+    displayed = dict(finding)
+    value_display = _display_value(
+        finding["value"],
+        finding["redaction"]["suggested_value"],
+        finding["value_hash"],
+        report_value_mode,
+    )
+    displayed["value"] = value_display
+    displayed["value_display"] = value_display
+    return displayed
+
+
+def _display_boundary_exposures(exposures: list[dict[str, Any]], report_value_mode: str) -> list[dict[str, Any]]:
+    return [_display_boundary_exposure(exposure, report_value_mode) for exposure in exposures]
+
+
+def _display_boundary_exposure(exposure: dict[str, Any], report_value_mode: str) -> dict[str, Any]:
+    displayed = dict(exposure)
+    value_display = _display_value(
+        exposure["value"],
+        exposure["redaction"],
+        exposure["value_hash"],
+        report_value_mode,
+    )
+    displayed["value"] = value_display
+    displayed["value_display"] = value_display
+    displayed.pop("redaction", None)
+    return displayed
+
+
+def _display_value(value: str, redaction: str, value_hash: str, report_value_mode: str) -> str:
+    if report_value_mode == "raw":
+        return value
+    if report_value_mode == "redacted":
+        return redaction
+    if report_value_mode == "hashed":
+        return value_hash
+    raise ValueError(f"unsupported report value mode {report_value_mode!r}; expected one of: {', '.join(sorted(REPORT_VALUE_MODES))}")
+
+
+def _value_hash(value: str) -> str:
+    return f"sha256:{hashlib.sha256(value.encode('utf-8')).hexdigest()}"
+
+
+def _validate_report_value_mode(report_value_mode: str) -> None:
+    if report_value_mode not in REPORT_VALUE_MODES:
+        allowed = ", ".join(sorted(REPORT_VALUE_MODES))
+        raise ValueError(f"unsupported report value mode {report_value_mode!r}; expected one of: {allowed}")
 
 
 def _append_unique_scalar(items: list[str], value: str) -> None:

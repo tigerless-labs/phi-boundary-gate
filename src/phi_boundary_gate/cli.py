@@ -5,11 +5,17 @@ import json
 import sys
 from pathlib import Path
 
-from .adapters import load_external_trace, mapping_summary, validate_trace_mapping, write_converted_trace
+from .adapters import (
+    load_external_trace,
+    mapping_summary,
+    validate_trace_mapping,
+    write_conversion_diagnostics,
+    write_converted_trace,
+)
 from .policy import load_policy
 from .project import check_project_config, init_project
 from .redacted_trace import write_redacted_trace
-from .report import build_report, write_json_report, write_markdown_report
+from .report import REPORT_VALUE_MODES, build_report, write_json_report, write_markdown_report
 from .trace import TraceEvent, load_trace, trace_event_to_dict
 
 COMMANDS = {"init", "check-config", "convert-trace", "scan-trace", "validate-mapping", "validate-trace"}
@@ -38,6 +44,7 @@ def main(argv: list[str] | None = None) -> int:
     output_group = convert_parser.add_mutually_exclusive_group(required=True)
     output_group.add_argument("--out", type=Path, help="Path for the normalized PHI Boundary Gate JSONL trace.")
     output_group.add_argument("--stdout", action="store_true", help="Write normalized JSONL to stdout.")
+    convert_parser.add_argument("--diagnostics", type=Path, help="Optional path for adapter diagnostics JSON.")
 
     scan_parser = subparsers.add_parser("scan-trace", help="Scan a JSONL trace and write audit outputs.")
     _add_scan_trace_args(scan_parser)
@@ -69,6 +76,12 @@ def _add_scan_trace_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--json", required=True, type=Path, dest="json_out", help="Path for the JSON report.")
     parser.add_argument("--redacted-trace", type=Path, help="Optional path for a redacted JSONL trace.")
     parser.add_argument(
+        "--report-values",
+        choices=sorted(REPORT_VALUE_MODES),
+        default="raw",
+        help="How matched values are displayed in Markdown and JSON reports.",
+    )
+    parser.add_argument(
         "--enable-presidio",
         action="store_true",
         help="Enable optional local Presidio PII detection in addition to built-in regex rules.",
@@ -86,7 +99,14 @@ def _scan_trace_from_args(args: argparse.Namespace) -> int:
     try:
         events = load_trace(args.trace)
         policy = load_policy(args.policy)
-        report = build_report(events, policy, args.trace, args.policy, enable_presidio=args.enable_presidio)
+        report = build_report(
+            events,
+            policy,
+            args.trace,
+            args.policy,
+            enable_presidio=args.enable_presidio,
+            report_value_mode=args.report_values,
+        )
     except (OSError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
@@ -120,6 +140,8 @@ def _convert_trace(args: argparse.Namespace) -> int:
             _write_trace_stdout(events)
         else:
             events = write_converted_trace(args.input, args.mapping, args.out)
+        if args.diagnostics:
+            write_conversion_diagnostics(args.input, args.mapping, args.diagnostics)
     except (OSError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2

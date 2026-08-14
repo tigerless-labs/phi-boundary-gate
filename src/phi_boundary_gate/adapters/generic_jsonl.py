@@ -38,6 +38,9 @@ class TraceAdapter:
         write_trace(events, Path(output_path))
         return events
 
+    def diagnostics(self, input_path: Path | str) -> dict[str, Any]:
+        return build_conversion_diagnostics(Path(input_path), self.mapping)
+
     def summary(self) -> dict[str, Any]:
         return mapping_summary(self.mapping)
 
@@ -79,6 +82,56 @@ def write_converted_trace(input_path: Path, mapping_path: Path, output_path: Pat
     events = load_external_trace(input_path, mapping_path)
     write_trace(events, output_path)
     return events
+
+
+def build_conversion_diagnostics(input_path: Path, mapping: TraceMapping) -> dict[str, Any]:
+    raw_events: list[dict[str, Any]] = []
+    events: list[TraceEvent] = []
+    with input_path.open("r", encoding="utf-8") as handle:
+        for line_number, line in enumerate(handle, start=1):
+            stripped = line.strip()
+            if not stripped:
+                continue
+            try:
+                raw = json.loads(stripped)
+            except json.JSONDecodeError as exc:
+                raise MappingError(f"{input_path}:{line_number}: invalid JSON: {exc.msg}") from exc
+            if not isinstance(raw, dict):
+                raise MappingError(f"{input_path}:{line_number}: input event must be an object")
+            raw_events.append(raw)
+            events.append(_convert_event(raw, mapping.raw, input_path, line_number, len(events) + 1))
+
+    configured_content = _configured_content_field_specs(mapping.raw["content"])
+    content_path_counts = _count_content_paths(events)
+    return {
+        "schema_version": 1,
+        "external_format": "generic_jsonl",
+        "input_path": str(input_path),
+        "mapping_version": mapping.raw["version"],
+        "total_events": len(events),
+        "events_by_layer": _count_values(event.layer for event in events),
+        "destination_layers": _count_values(
+            str(destination["layer"])
+            for event in events
+            for destination in event.destinations
+            if "layer" in destination
+        ),
+        "content_paths_used": content_path_counts,
+        "optional_content_paths_never_used": [
+            spec["field"]
+            for spec in configured_content
+            if not spec["required"] and spec["field"] not in content_path_counts
+        ],
+        "generated_event_id_count": _generated_event_id_count(raw_events, mapping.raw),
+        "field_fallbacks": _field_fallback_counts(raw_events, mapping.raw),
+    }
+
+
+def write_conversion_diagnostics(input_path: Path, mapping_path: Path, output_path: Path) -> dict[str, Any]:
+    diagnostics = build_conversion_diagnostics(input_path, load_trace_mapping(mapping_path))
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(json.dumps(diagnostics, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return diagnostics
 
 
 def convert_generic_jsonl_trace(input_path: Path, mapping: TraceMapping) -> list[TraceEvent]:
@@ -319,6 +372,22 @@ def _configured_content_fields(spec: Any) -> list[str]:
         field_spec if isinstance(field_spec, str) else str(field_spec.get("field", ""))
         for field_spec in spec.get("fields", [])
     ]
+
+
+def _configured_content_field_specs(spec: Any) -> list[dict[str, Any]]:
+    if isinstance(spec, str):
+        return [{"field": spec, "required": True}]
+    if not isinstance(spec, dict):
+        return []
+    if "field" in spec:
+        return [{"field": str(spec["field"]), "required": bool(spec.get("required", True))}]
+    configured: list[dict[str, Any]] = []
+    for field_spec in spec.get("fields", []):
+        if isinstance(field_spec, str):
+            configured.append({"field": field_spec, "required": True})
+        elif isinstance(field_spec, dict):
+            configured.append({"field": str(field_spec.get("field", "")), "required": bool(field_spec.get("required", True))})
+    return configured
 
 
 def _configured_metadata_fields(spec: Any) -> list[str]:
@@ -610,6 +679,108 @@ def _value_from_fields(
         if text:
             return text
     return None
+
+
+def _count_content_paths(events: list[TraceEvent]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for event in events:
+        paths = event.metadata.get("external_content_paths", [])
+        if not isinstance(paths, list):
+            continue
+        for path in paths:
+            if isinstance(path, str):
+                counts[path] = counts.get(path, 0) + 1
+    return dict(sorted(counts.items()))
+
+
+def _count_values(values: Any) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for value in values:
+        counts[value] = counts.get(value, 0) + 1
+    return dict(sorted(counts.items()))
+
+
+def _generated_event_id_count(raw_events: list[dict[str, Any]], mapping: dict[str, Any]) -> int:
+    event_id_spec = mapping.get("event_id")
+    return sum(1 for raw in raw_events if _selected_value_source(raw, event_id_spec, "event_id") == "<generated>")
+
+
+def _field_fallback_counts(raw_events: list[dict[str, Any]], mapping: dict[str, Any]) -> dict[str, dict[str, int]]:
+    specs = _diagnostic_value_specs(mapping)
+    fallback_counts: dict[str, dict[str, int]] = {}
+    for label, spec in specs:
+        counts: dict[str, int] = {}
+        for raw in raw_events:
+            selected = _selected_value_source(raw, spec, label)
+            if selected is not None:
+                counts[selected] = counts.get(selected, 0) + 1
+        if counts:
+            fallback_counts[label] = dict(sorted(counts.items()))
+    return dict(sorted(fallback_counts.items()))
+
+
+def _diagnostic_value_specs(mapping: dict[str, Any]) -> list[tuple[str, Any]]:
+    specs: list[tuple[str, Any]] = [
+        ("event_id", mapping.get("event_id")),
+        ("timestamp", mapping.get("timestamp")),
+        ("layer", mapping.get("layer")),
+    ]
+    source = mapping.get("source", {})
+    if isinstance(source, dict):
+        for key in ("type", "path"):
+            if key in source:
+                specs.append((f"source.{key}", source[key]))
+    destinations = mapping.get("destinations", [])
+    if isinstance(destinations, list):
+        for index, destination in enumerate(destinations):
+            if not isinstance(destination, dict):
+                continue
+            for key in ("layer", "path"):
+                if key in destination:
+                    specs.append((f"destinations[{index}].{key}", destination[key]))
+    return specs
+
+
+def _selected_value_source(raw: dict[str, Any], spec: Any, label: str) -> str | None:
+    if spec is None:
+        return "<generated>" if label == "event_id" else None
+    if isinstance(spec, str):
+        return spec if _can_read_value(raw, spec) else None
+    if not isinstance(spec, dict):
+        return None
+    if "value" in spec:
+        return "<value>"
+    if "field" in spec:
+        field = str(spec["field"])
+        if _can_read_value(raw, field):
+            return field
+    if "fields" in spec and isinstance(spec["fields"], list):
+        for candidate in spec["fields"]:
+            if isinstance(candidate, str) and _can_read_value(raw, candidate):
+                return candidate
+    if "default" in spec:
+        return "<default>"
+    if label == "event_id":
+        return "<generated>"
+    return None
+
+
+def _can_read_value(raw: dict[str, Any], field: str) -> bool:
+    current: Any = raw
+    for part in field.split("."):
+        if isinstance(current, dict):
+            if part not in current:
+                return False
+            current = current[part]
+            continue
+        if isinstance(current, list) and part.isdigit():
+            index = int(part)
+            if index >= len(current):
+                return False
+            current = current[index]
+            continue
+        return False
+    return current not in (None, "")
 
 
 def _value_at(raw: dict[str, Any], field: str, input_path: Path, line_number: int, label: str) -> Any:
