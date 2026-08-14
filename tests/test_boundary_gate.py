@@ -17,7 +17,7 @@ from phi_boundary_gate.cli import main
 from phi_boundary_gate.detectors import detect_candidates
 from phi_boundary_gate.policy import load_policy
 from phi_boundary_gate.report import build_report, write_json_report, write_markdown_report
-from phi_boundary_gate.trace import load_trace
+from phi_boundary_gate.trace import TraceEvent, load_trace
 
 
 class BoundaryGateTest(unittest.TestCase):
@@ -123,6 +123,48 @@ class BoundaryGateTest(unittest.TestCase):
 
         self.assertEqual(len(debug_member_findings), 1)
         self.assertEqual(debug_member_findings[0]["policy"]["disposition"], "violation")
+
+    def test_report_schema_v3_tracks_structured_content_paths(self) -> None:
+        event = TraceEvent(
+            event_id="evt_structured",
+            timestamp="2026-08-14T10:00:00Z",
+            layer="tool_output",
+            content=json.dumps(
+                {
+                    "member_id": "MBR-SYN-8842",
+                    "tool": {"response": {"claim_id": "CLM-SYN-44501"}},
+                    "messages": [{"content": "Member ID: MBR-SYN-8842"}],
+                }
+            ),
+            metadata={"external_content_paths": ["payload"]},
+        )
+        policy = load_policy(ROOT / "samples/policies/default.yml")
+
+        report = build_report([event], policy, Path("<events>"), ROOT / "samples/policies/default.yml")
+        member_paths = {
+            finding["content_path"]
+            for finding in report["findings"]
+            if finding["category"] == "member_id" and finding["value"] == "MBR-SYN-8842"
+        }
+        claim_finding = next(finding for finding in report["findings"] if finding["category"] == "claim_id")
+        member_exposure = next(exposure for exposure in report["boundary_exposures"] if exposure["category"] == "member_id")
+
+        self.assertEqual(report["schema_version"], 3)
+        self.assertEqual(report["finding_schema"], "path-aware")
+        self.assertEqual(member_paths, {"$.member_id", "$.messages[0].content"})
+        self.assertEqual(claim_finding["content_path"], "$.tool.response.claim_id")
+        self.assertEqual(claim_finding["external_content_path"], "payload.tool.response.claim_id")
+        self.assertEqual(member_exposure["content_paths_seen"], ["$.member_id", "$.messages[0].content"])
+        self.assertEqual(member_exposure["external_content_paths_seen"], ["payload.member_id", "payload.messages[0].content"])
+
+    def test_plain_text_report_findings_keep_empty_content_paths(self) -> None:
+        trace = load_trace(ROOT / "samples/traces/claim_agent_minimal.jsonl")
+        policy = load_policy(ROOT / "samples/policies/default.yml")
+
+        report = build_report(trace, policy, ROOT / "samples/traces/claim_agent_minimal.jsonl", ROOT / "samples/policies/default.yml")
+
+        self.assertTrue(report["findings"])
+        self.assertTrue(all(finding["content_path"] is None for finding in report["findings"]))
 
     def test_cli_writes_markdown_and_json_reports(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

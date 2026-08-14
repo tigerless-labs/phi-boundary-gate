@@ -1,7 +1,7 @@
 <h1 align="center">PHI Boundary Gate</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/release-v0.5.6-brightgreen.svg" alt="release v0.5.6" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
+  <img src="https://img.shields.io/badge/release-v0.6.0-brightgreen.svg" alt="release v0.6.0" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
 </p>
 
 **PHI Boundary Gate** detects, gates, redacts, and reports PHI candidate
@@ -10,8 +10,8 @@ model input, memory, debug logs, and provider requests.
 
 It is built for healthcare and insurance AI workflows where an identifier match
 is only the start. The report answers which layer the value entered, where it
-came from, where it is going, and what policy says should happen before it moves
-again.
+came from, where it is going, which structured payload field contained it, and
+what policy says should happen before it moves again.
 
 The package ships as both a CLI and a Python library. Use the CLI for offline
 audits that produce Markdown, JSON, and redacted JSONL traces. Use the library
@@ -21,6 +21,7 @@ calls when the configured PHI and compliance policy says the route is not allowe
 | | |
 |---|---|
 | **Boundary-first reports** | Groups repeated PHI candidates across trace events so you can see the path, not only the match. |
+| **Path-aware audit schema** | Report schema v3 records JSON content paths and external adapter paths for structured payloads. |
 | **Hybrid candidate detection** | Built-in regex rules cover common synthetic PHI variants; optional local Presidio detection can add NER-backed spans. |
 | **Trace corpus baseline** | Synthetic trace expectations cover boundary flow, near misses, free text, structured payloads, and provider-boundary paths. |
 | **External trace adapters** | Mapping v1 can normalize generic agent JSONL into the package trace schema before scanning. |
@@ -75,7 +76,7 @@ error to stderr.
 Use the PyPI package for normal consumption:
 
 ```bash
-python3 -m pip install "phi-boundary-gate>=0.5,<0.6"
+python3 -m pip install "phi-boundary-gate>=0.6,<0.7"
 ```
 
 The consuming environment needs Python 3.11 or newer and `pip`. `pip` installs
@@ -85,7 +86,7 @@ Optional local NER support is available for projects that want Presidio-assisted
 span detection in addition to the built-in regex rules:
 
 ```bash
-python3 -m pip install "phi-boundary-gate[ner]>=0.5,<0.6"
+python3 -m pip install "phi-boundary-gate[ner]>=0.6,<0.7"
 python3 -m spacy download en_core_web_lg
 ```
 
@@ -126,11 +127,11 @@ with real PHI.
 Update consuming projects through the package index:
 
 ```bash
-python3 -m pip install --upgrade "phi-boundary-gate>=0.5,<0.6"
+python3 -m pip install --upgrade "phi-boundary-gate>=0.6,<0.7"
 ```
 
 Production projects should use a compatible version range such as
-`phi-boundary-gate>=0.5,<0.6` and let Dependabot, Renovate, or a lockfile update
+`phi-boundary-gate>=0.6,<0.7` and let Dependabot, Renovate, or a lockfile update
 workflow propose patch/minor updates through CI. Git tag installs remain a
 fallback for environments that cannot access PyPI, but they are no longer the
 primary consumption path.
@@ -246,11 +247,19 @@ The CLI writes two report formats from the same scan:
 - JSON for CI, dashboards, or downstream audit storage.
 
 Each finding includes the matched value, category, span, detector confidence,
-trace source, trace destinations, policy disposition, risk level, and suggested
-redaction value. Boundary exposures group the same PHI candidate across events,
-then sort by the worst policy disposition so violations rise to the top.
+trace source, trace destinations, content path, external content path, policy
+disposition, risk level, and suggested redaction value. Boundary exposures group
+the same PHI candidate across events, then sort by the worst policy disposition
+so violations rise to the top.
 Use `--report-values redacted` or `--report-values hashed` to keep Markdown and
 JSON reports from displaying raw matched values.
+
+Report schema v3 is path-aware. Plain text trace events keep `content_path` as
+`null`. If an event `content` field is a JSON object or array string, the scanner
+checks each scalar leaf separately and records JSON-style paths such as
+`$.tool.response.claim_id` or `$.messages[0].content`. Adapter metadata with a
+single `external_content_paths` base is combined into `external_content_path`,
+which makes reports easier to map back to raw agent payloads.
 
 When `--redacted-trace` is provided, the CLI also writes a JSONL trace whose
 `content` fields use policy redaction placeholders. Exact repeats of a detected
@@ -313,6 +322,21 @@ if decision.should_block:
 
 safe_log_text = gate.redact_for_log("debug member_id=MBR-SYN-8842")
 audit_payload = decision.to_safe_dict()
+```
+
+For full trace audits from another Python service, use the SDK audit helpers:
+
+```python
+from phi_boundary_gate import PhiBoundaryGate
+
+gate = PhiBoundaryGate.from_project()
+result = gate.audit_trace("normalized-trace.jsonl", report_value_mode="redacted")
+
+if result.has_violations:
+    raise RuntimeError("PHI boundary violation candidates found")
+
+result.write_json("phi-report.json")
+result.write_markdown("phi-report.md")
 ```
 
 External traces can use the public adapter facade instead of importing internal
@@ -406,7 +430,7 @@ Run the tests:
 PYTHONPATH=src python3 -m unittest discover -s tests
 ```
 
-Current release: `v0.5.6`.
+Current release: `v0.6.0`.
 
 ## Limits
 

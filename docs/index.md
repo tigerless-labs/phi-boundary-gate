@@ -2,6 +2,8 @@
 
 - [Install and consume](install.md) - PyPI installation, local editable installs, Git tag fallback, and release publishing.
 - [Library API](library-api.md) - Embeddable scan, redact, guard, and project SDK APIs.
+- [External integration](external-integration.md) - Recommended dependency, adapter, and audit flow for consuming projects.
+- [Migration to 0.6.0](migration-0.6.md) - Report schema v3 and audit SDK migration notes.
 - [Compliance guard](compliance-guard.md) - Service eligibility checks for PHI-bearing provider calls.
 - [Trace adapters](adapters.md) - Mapping v1 for normalizing external agent JSONL traces.
 - [Trace schema](trace-schema.md) - JSONL trace event format.

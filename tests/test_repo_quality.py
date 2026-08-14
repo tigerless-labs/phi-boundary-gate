@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from phi_boundary_gate import (  # noqa: E402
+    AuditResult,
     PhiBoundaryGate,
     PhiBoundaryGateError,
     PolicyError,
@@ -17,6 +18,8 @@ from phi_boundary_gate import (  # noqa: E402
     TraceAdapter,
     TraceMappingError,
     __version__,
+    audit_events,
+    audit_trace,
     build_report,
     load_external_trace,
     load_trace,
@@ -78,6 +81,7 @@ class RepoQualityTest(unittest.TestCase):
             detect_candidates("No PHI here.", enable_presidio=True)
 
     def test_public_sdk_api_exports_are_available(self) -> None:
+        self.assertEqual(AuditResult.__name__, "AuditResult")
         self.assertEqual(PhiBoundaryGate.__name__, "PhiBoundaryGate")
         self.assertEqual(PhiBoundaryGateError.__name__, "PhiBoundaryGateError")
         self.assertEqual(PolicyError.__name__, "PolicyError")
@@ -85,6 +89,8 @@ class RepoQualityTest(unittest.TestCase):
         self.assertEqual(ProjectConfigNotFoundError.__name__, "ProjectConfigNotFoundError")
         self.assertEqual(TraceAdapter.__name__, "TraceAdapter")
         self.assertEqual(TraceMappingError.__name__, "TraceMappingError")
+        self.assertEqual(audit_events.__name__, "audit_events")
+        self.assertEqual(audit_trace.__name__, "audit_trace")
         self.assertEqual(build_report.__name__, "build_report")
         self.assertEqual(load_external_trace.__name__, "load_external_trace")
         self.assertEqual(load_trace.__name__, "load_trace")

@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from phi_boundary_gate import (  # noqa: E402
+    AuditResult,
     PhiBoundaryGate,
     ProjectConfigError,
     ProjectConfigNotFoundError,
@@ -22,6 +23,7 @@ from phi_boundary_gate import (  # noqa: E402
     init_project,
 )
 from phi_boundary_gate.cli import main  # noqa: E402
+from phi_boundary_gate.trace import TraceEvent  # noqa: E402
 
 
 class SdkProjectTest(unittest.TestCase):
@@ -89,6 +91,42 @@ class SdkProjectTest(unittest.TestCase):
             self.assertTrue(decision.has_phi)
             self.assertEqual(decision.redacted_text, "member_id=[REDACTED_MEMBER_ID]")
 
+    def test_phi_boundary_gate_audit_trace_returns_result_object(self) -> None:
+        gate = PhiBoundaryGate.from_policy_file(ROOT / "samples/policies/default.yml")
+
+        result = gate.audit_trace(
+            ROOT / "samples/traces/claim_agent_minimal.jsonl",
+            policy_path=ROOT / "samples/policies/default.yml",
+            report_value_mode="hashed",
+        )
+
+        self.assertIsInstance(result, AuditResult)
+        self.assertTrue(result.has_findings)
+        self.assertTrue(result.has_violations)
+        self.assertEqual(result.to_dict()["schema_version"], 3)
+        self.assertIn("# PHI Boundary Gate Report", result.to_markdown())
+        self.assertNotIn("MBR-SYN-8842", json.dumps(result.to_dict()))
+
+    def test_audit_result_writes_json_and_markdown(self) -> None:
+        gate = PhiBoundaryGate.from_policy_file(ROOT / "samples/policies/default.yml")
+        events = [
+            TraceEvent(
+                event_id="evt_sdk",
+                timestamp="2026-08-14T10:00:00Z",
+                layer="debug_log",
+                content="member_id=MBR-SYN-8842",
+            )
+        ]
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            result = gate.audit_events(events, report_value_mode="redacted")
+            result.write_json(tmp_path / "report.json")
+            result.write_markdown(tmp_path / "report.md")
+
+            self.assertEqual(json.loads((tmp_path / "report.json").read_text(encoding="utf-8"))["schema_version"], 3)
+            self.assertIn("[REDACTED_MEMBER_ID]", (tmp_path / "report.md").read_text(encoding="utf-8"))
+
     def test_cli_init_and_check_config(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -112,11 +150,20 @@ class SdkProjectTest(unittest.TestCase):
             text=True,
             env=self.subprocess_env(),
         )
+        audit = subprocess.run(
+            [sys.executable, str(ROOT / "examples/sdk_audit_trace.py")],
+            check=True,
+            capture_output=True,
+            text=True,
+            env=self.subprocess_env(),
+        )
 
         self.assertNotIn("MBR-SYN-8842", guard.stdout)
         self.assertIn("[REDACTED_MEMBER_ID]", guard.stdout)
         self.assertNotIn("MBR-SYN-8842", redact.stdout)
         self.assertIn("[REDACTED_MEMBER_ID]", redact.stdout)
+        self.assertNotIn("MBR-SYN-8842", audit.stdout)
+        self.assertIn('"schema_version": 3', audit.stdout)
 
 
 if __name__ == "__main__":

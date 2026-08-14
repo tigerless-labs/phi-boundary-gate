@@ -8,13 +8,13 @@ package installation, not by copying source files.
 Use PyPI for normal consumption:
 
 ```bash
-python3 -m pip install "phi-boundary-gate>=0.5,<0.6"
+python3 -m pip install "phi-boundary-gate>=0.6,<0.7"
 ```
 
 For `requirements.txt`:
 
 ```text
-phi-boundary-gate>=0.5,<0.6
+phi-boundary-gate>=0.6,<0.7
 ```
 
 For `pyproject.toml`:
@@ -22,7 +22,7 @@ For `pyproject.toml`:
 ```toml
 [project]
 dependencies = [
-  "phi-boundary-gate>=0.5,<0.6",
+  "phi-boundary-gate>=0.6,<0.7",
 ]
 ```
 
@@ -38,7 +38,7 @@ Presidio-assisted NER detection, install the optional `ner` extra and a spaCy
 English model in the consuming environment:
 
 ```bash
-python3 -m pip install "phi-boundary-gate[ner]>=0.5,<0.6"
+python3 -m pip install "phi-boundary-gate[ner]>=0.6,<0.7"
 python3 -m spacy download en_core_web_lg
 ```
 
@@ -75,6 +75,14 @@ gate = PhiBoundaryGate.from_project()
 decision = gate.guard_model_input("member_id=MBR-SYN-8842")
 safe_log_text = gate.redact_for_log("debug member_id=MBR-SYN-8842")
 audit_payload = decision.to_safe_dict()
+```
+
+Full trace audits can also stay in-process:
+
+```python
+result = gate.audit_trace("normalized-trace.jsonl", report_value_mode="redacted")
+result.write_json("phi-report.json")
+result.write_markdown("phi-report.md")
 ```
 
 ## External Trace Normalization
@@ -119,14 +127,14 @@ package index:
 
 ```bash
 python3 -m pip install \
-  "phi-boundary-gate @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.5.6"
+  "phi-boundary-gate @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.6.0"
 ```
 
 The NER extra works with the same fallback:
 
 ```bash
 python3 -m pip install \
-  "phi-boundary-gate[ner] @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.5.6"
+  "phi-boundary-gate[ner] @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.6.0"
 ```
 
 For short-term testing, a commit SHA is also valid:
@@ -153,8 +161,8 @@ Release publishing uses GitHub Actions and PyPI Trusted Publishing:
 5. Create and push the release tag:
 
 ```bash
-git tag v0.5.6
-git push origin v0.5.6
+git tag v0.6.0
+git push origin v0.6.0
 ```
 
 The tag workflow publishes the same built package shape to PyPI.
