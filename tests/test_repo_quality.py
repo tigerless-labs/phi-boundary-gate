@@ -19,6 +19,7 @@ from phi_boundary_gate import (  # noqa: E402
     TraceMappingError,
     __version__,
     audit_events,
+    audit_external_trace,
     audit_trace,
     build_report,
     load_external_trace,
@@ -90,6 +91,7 @@ class RepoQualityTest(unittest.TestCase):
         self.assertEqual(TraceAdapter.__name__, "TraceAdapter")
         self.assertEqual(TraceMappingError.__name__, "TraceMappingError")
         self.assertEqual(audit_events.__name__, "audit_events")
+        self.assertEqual(audit_external_trace.__name__, "audit_external_trace")
         self.assertEqual(audit_trace.__name__, "audit_trace")
         self.assertEqual(build_report.__name__, "build_report")
         self.assertEqual(load_external_trace.__name__, "load_external_trace")

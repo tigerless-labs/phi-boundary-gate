@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 from .adapters import (
+    TraceAdapter,
     load_external_trace,
     mapping_summary,
     validate_trace_mapping,
@@ -16,9 +17,17 @@ from .policy import load_policy
 from .project import check_project_config, init_project
 from .redacted_trace import write_redacted_trace
 from .report import REPORT_VALUE_MODES, build_report, write_json_report, write_markdown_report
-from .trace import TraceEvent, load_trace, trace_event_to_dict
+from .trace import TraceEvent, load_trace, trace_event_to_dict, write_trace
 
-COMMANDS = {"init", "check-config", "convert-trace", "scan-trace", "validate-mapping", "validate-trace"}
+COMMANDS = {
+    "init",
+    "check-config",
+    "convert-trace",
+    "scan-external-trace",
+    "scan-trace",
+    "validate-mapping",
+    "validate-trace",
+}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -46,6 +55,12 @@ def main(argv: list[str] | None = None) -> int:
     output_group.add_argument("--stdout", action="store_true", help="Write normalized JSONL to stdout.")
     convert_parser.add_argument("--diagnostics", type=Path, help="Optional path for adapter diagnostics JSON.")
 
+    external_parser = subparsers.add_parser(
+        "scan-external-trace",
+        help="Normalize and scan an external JSONL trace in one step.",
+    )
+    _add_scan_external_trace_args(external_parser)
+
     scan_parser = subparsers.add_parser("scan-trace", help="Scan a JSONL trace and write audit outputs.")
     _add_scan_trace_args(scan_parser)
 
@@ -62,6 +77,8 @@ def main(argv: list[str] | None = None) -> int:
         return _check_config(args)
     if args.command == "convert-trace":
         return _convert_trace(args)
+    if args.command == "scan-external-trace":
+        return _scan_external_trace(args)
     if args.command == "validate-mapping":
         return _validate_mapping(args)
     if args.command == "validate-trace":
@@ -79,6 +96,32 @@ def _add_scan_trace_args(parser: argparse.ArgumentParser) -> None:
         "--report-values",
         choices=sorted(REPORT_VALUE_MODES),
         default="raw",
+        help="How matched values are displayed in Markdown and JSON reports.",
+    )
+    parser.add_argument(
+        "--enable-presidio",
+        action="store_true",
+        help="Enable optional local Presidio PII detection in addition to built-in regex rules.",
+    )
+
+
+def _add_scan_external_trace_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--input", required=True, type=Path, help="Path to the external JSONL trace.")
+    parser.add_argument("--mapping", required=True, type=Path, help="Path to a mapping v1 YAML file.")
+    parser.add_argument("--policy", required=True, type=Path, help="Path to a YAML PHI policy.")
+    parser.add_argument("--out", required=True, type=Path, help="Path for the Markdown report.")
+    parser.add_argument("--json", required=True, type=Path, dest="json_out", help="Path for the JSON report.")
+    parser.add_argument("--diagnostics", type=Path, help="Optional path for adapter diagnostics JSON.")
+    parser.add_argument(
+        "--normalized-trace",
+        type=Path,
+        help="Optional path to retain the normalized trace for debugging; it may contain sensitive content.",
+    )
+    parser.add_argument("--redacted-trace", type=Path, help="Optional path for a redacted normalized JSONL trace.")
+    parser.add_argument(
+        "--report-values",
+        choices=sorted(REPORT_VALUE_MODES),
+        default="redacted",
         help="How matched values are displayed in Markdown and JSON reports.",
     )
     parser.add_argument(
@@ -111,22 +154,84 @@ def _scan_trace_from_args(args: argparse.Namespace) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return 2
 
-    write_markdown_report(report, args.out)
-    write_json_report(report, args.json_out)
-    if args.redacted_trace:
+    return _write_scan_outputs(
+        events,
+        policy,
+        report,
+        markdown_out=args.out,
+        json_out=args.json_out,
+        redacted_trace_out=args.redacted_trace,
+        enable_presidio=args.enable_presidio,
+    )
+
+
+def _scan_external_trace(args: argparse.Namespace) -> int:
+    try:
+        adapter = TraceAdapter.from_mapping(args.mapping)
+        events = adapter.load(args.input)
+        policy = load_policy(args.policy)
+
+        if args.normalized_trace:
+            args.normalized_trace.parent.mkdir(parents=True, exist_ok=True)
+            write_trace(events, args.normalized_trace)
+
+        if args.diagnostics:
+            diagnostics = adapter.diagnostics(args.input)
+            args.diagnostics.parent.mkdir(parents=True, exist_ok=True)
+            args.diagnostics.write_text(
+                json.dumps(diagnostics, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+
+        report = build_report(
+            events,
+            policy,
+            args.input,
+            args.policy,
+            enable_presidio=args.enable_presidio,
+            report_value_mode=args.report_values,
+        )
+    except (OSError, ValueError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+
+    return _write_scan_outputs(
+        events,
+        policy,
+        report,
+        markdown_out=args.out,
+        json_out=args.json_out,
+        redacted_trace_out=args.redacted_trace,
+        enable_presidio=args.enable_presidio,
+    )
+
+
+def _write_scan_outputs(
+    events: list[TraceEvent],
+    policy,
+    report: dict,
+    *,
+    markdown_out: Path,
+    json_out: Path,
+    redacted_trace_out: Path | None,
+    enable_presidio: bool,
+) -> int:
+    write_markdown_report(report, markdown_out)
+    write_json_report(report, json_out)
+    if redacted_trace_out:
         try:
-            write_redacted_trace(events, policy, args.redacted_trace, enable_presidio=args.enable_presidio)
+            write_redacted_trace(events, policy, redacted_trace_out, enable_presidio=enable_presidio)
         except ValueError as exc:
             print(f"error: {exc}", file=sys.stderr)
             return 2
 
     summary = report["summary"]
-    redacted_note = f" and redacted trace {args.redacted_trace}" if args.redacted_trace else ""
+    redacted_note = f" and redacted trace {redacted_trace_out}" if redacted_trace_out else ""
     print(
         "Wrote {total} PHI candidate finding(s): {markdown} and {json}{redacted}".format(
             total=summary["total_findings"],
-            markdown=args.out,
-            json=args.json_out,
+            markdown=markdown_out,
+            json=json_out,
             redacted=redacted_note,
         )
     )

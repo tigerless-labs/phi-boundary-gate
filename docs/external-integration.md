@@ -9,10 +9,30 @@ source files or import private modules.
 2. Run `phi-boundary-gate init` in the consuming project.
 3. Review `config/phi-policy.yml` and, if needed,
    `config/phi-compliance-policy.yml`.
-4. Normalize raw agent logs with `TraceAdapter` or the `convert-trace` CLI.
-5. Run `PhiBoundaryGate.audit_trace()` or `PhiBoundaryGate.audit_events()`.
+4. Prefer `PhiBoundaryGate.audit_external_trace()` or the
+   `scan-external-trace` CLI when a mapping-v1 adapter can normalize the raw log.
+5. Use `TraceAdapter` / `convert-trace` plus `audit_trace()` only when you need
+   to inspect or persist the normalized intermediate trace.
 6. Store reports with `report_value_mode="redacted"` or `"hashed"` unless the
    storage location is approved for raw PHI.
+
+
+## Direct External Audit
+
+```python
+from phi_boundary_gate import PhiBoundaryGate
+
+gate = PhiBoundaryGate.from_project()
+result = gate.audit_external_trace(
+    "raw-agent-events.jsonl",
+    mapping="config/phi-trace-map.yml",
+    report_value_mode="redacted",
+)
+```
+
+The direct path normalizes in memory and preserves the original external input
+path in the report. Adapter provenance such as `external_content_path` remains
+available on findings.
 
 ## In-Process Audit
 

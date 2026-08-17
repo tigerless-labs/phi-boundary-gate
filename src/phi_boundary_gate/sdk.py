@@ -96,6 +96,26 @@ class PhiBoundaryGate:
             report_value_mode=report_value_mode,
         )
 
+    def audit_external_trace(
+        self,
+        input_path: Path | str,
+        *,
+        mapping: Path | str,
+        diagnostics_path: Path | str | None = None,
+        policy_path: Path | str | None = None,
+        report_value_mode: ReportValueMode = "raw",
+    ) -> AuditResult:
+        from .external_audit import audit_external_trace
+
+        return audit_external_trace(
+            self,
+            input_path,
+            mapping=mapping,
+            diagnostics_path=diagnostics_path,
+            policy_path=policy_path or self._policy_path(),
+            report_value_mode=report_value_mode,
+        )
+
     def guard_compliance(
         self,
         text: str,

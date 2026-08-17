@@ -257,6 +257,28 @@ For an agent runtime, call `guard_text` around trace and log boundaries such as 
 For CI or offline audit, keep `mode="report_only"` for text guards and use
 `audit_trace()`, `audit_events()`, or the CLI report outputs for full traces.
 
+## Direct External Trace Audit
+
+For mapped external agent traces, the SDK facade can compose normalization and
+path-aware auditing without persisting an intermediate trace:
+
+```python
+from phi_boundary_gate import PhiBoundaryGate
+
+gate = PhiBoundaryGate.from_project()
+result = gate.audit_external_trace(
+    "raw-agent-events.jsonl",
+    mapping="config/phi-trace-map.yml",
+    diagnostics_path="/tmp/phi-adapter-diagnostics.json",
+    report_value_mode="redacted",
+)
+```
+
+The report keeps `raw-agent-events.jsonl` as its `trace_path`, while findings
+retain adapter provenance through `external_content_path`. Use the lower-level
+`TraceAdapter` flow below when you explicitly need the normalized events or a
+persisted normalized JSONL artifact.
+
 ## External Trace Conversion
 
 External agent logs can be normalized through mapping v1 before scanning. New
