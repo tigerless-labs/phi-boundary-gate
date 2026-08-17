@@ -157,6 +157,13 @@ class SdkProjectTest(unittest.TestCase):
             text=True,
             env=self.subprocess_env(),
         )
+        external_audit = subprocess.run(
+            [sys.executable, str(ROOT / "examples/sdk_audit_external_trace.py")],
+            check=True,
+            capture_output=True,
+            text=True,
+            env=self.subprocess_env(),
+        )
 
         self.assertNotIn("MBR-SYN-8842", guard.stdout)
         self.assertIn("[REDACTED_MEMBER_ID]", guard.stdout)
@@ -164,6 +171,9 @@ class SdkProjectTest(unittest.TestCase):
         self.assertIn("[REDACTED_MEMBER_ID]", redact.stdout)
         self.assertNotIn("MBR-SYN-8842", audit.stdout)
         self.assertIn('"schema_version": 3', audit.stdout)
+        self.assertNotIn("MBR-SYN-8842", external_audit.stdout)
+        self.assertIn('"schema_version": 3', external_audit.stdout)
+        self.assertIn("generic_agent_run.jsonl", external_audit.stdout)
 
 
 if __name__ == "__main__":

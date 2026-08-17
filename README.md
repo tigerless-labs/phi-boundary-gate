@@ -1,7 +1,7 @@
 <h1 align="center">PHI Boundary Gate</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/release-v0.6.0-brightgreen.svg" alt="release v0.6.0" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
+  <img src="https://img.shields.io/badge/release-v0.6.1-brightgreen.svg" alt="release v0.6.1" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
 </p>
 
 **PHI Boundary Gate** detects, gates, redacts, and reports PHI candidate
@@ -138,6 +138,28 @@ primary consumption path.
 
 For `requirements.txt` and `pyproject.toml` examples, see
 [Install and Consume as a Package](docs/install.md).
+
+
+### Scan an external agent trace in one step
+
+`v0.6.1` can compose the mapping adapter and path-aware audit pipeline without
+persisting an intermediate normalized trace:
+
+```bash
+phi-boundary-gate scan-external-trace \
+  --input raw-agent-events.jsonl \
+  --mapping config/phi-trace-map.yml \
+  --policy config/phi-policy.yml \
+  --out /tmp/phi-report.md \
+  --json /tmp/phi-report.json \
+  --diagnostics /tmp/phi-adapter-diagnostics.json \
+  --report-values redacted
+```
+
+The existing `convert-trace -> validate-trace -> scan-trace` workflow remains
+available when you want to inspect or persist the normalization stage. See
+[`docs/direct-external-audit.md`](docs/direct-external-audit.md) for SDK usage,
+diagnostics, and safety notes.
 
 ### Convert an external agent trace
 
@@ -339,6 +361,20 @@ result.write_json("phi-report.json")
 result.write_markdown("phi-report.md")
 ```
 
+
+For a one-step SDK path over an external trace:
+
+```python
+from phi_boundary_gate import PhiBoundaryGate
+
+gate = PhiBoundaryGate.from_project()
+result = gate.audit_external_trace(
+    "raw-agent-events.jsonl",
+    mapping="config/phi-trace-map.yml",
+    report_value_mode="redacted",
+)
+```
+
 External traces can use the public adapter facade instead of importing internal
 adapter modules:
 
@@ -430,7 +466,7 @@ Run the tests:
 PYTHONPATH=src python3 -m unittest discover -s tests
 ```
 
-Current release: `v0.6.0`.
+Current release: `v0.6.1`.
 
 ## Limits
 

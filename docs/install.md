@@ -85,10 +85,45 @@ result.write_json("phi-report.json")
 result.write_markdown("phi-report.md")
 ```
 
+## Direct External Trace Audit
+
+Starting with v0.6.1, projects with external agent JSONL traces can compose the
+mapping adapter and path-aware audit pipeline in one CLI command without keeping
+an intermediate normalized trace:
+
+```bash
+phi-boundary-gate scan-external-trace \
+  --input raw-agent-events.jsonl \
+  --mapping config/phi-trace-map.yml \
+  --policy config/phi-policy.yml \
+  --out phi-report.md \
+  --json phi-report.json \
+  --diagnostics adapter-diagnostics.json \
+  --report-values redacted
+```
+
+The direct command defaults to redacted report values. The normalized trace is
+temporary unless `--normalized-trace` is explicitly provided. If you retain a
+normalized trace for debugging, treat it as a potentially sensitive artifact and
+do not commit it.
+
+The same composed flow is available from Python:
+
+```python
+from phi_boundary_gate import PhiBoundaryGate
+
+gate = PhiBoundaryGate.from_project()
+result = gate.audit_external_trace(
+    "raw-agent-events.jsonl",
+    mapping="config/phi-trace-map.yml",
+    report_value_mode="redacted",
+)
+```
+
 ## External Trace Normalization
 
-Projects with their own agent event logs can normalize generic JSONL before
-scanning:
+Projects that need to inspect or persist each stage can continue to normalize
+generic JSONL before scanning:
 
 ```bash
 phi-boundary-gate convert-trace \
@@ -101,7 +136,9 @@ phi-boundary-gate validate-mapping --mapping config/phi-trace-map.yml
 phi-boundary-gate validate-trace --trace normalized-trace.jsonl
 ```
 
-See [Trace Adapters](adapters.md) for mapping v1.
+See [Trace Adapters](adapters.md) for mapping v1, and
+[Direct External Trace Audit](direct-external-audit.md) for the one-step CLI/SDK
+workflow and safety notes.
 
 ## Local Editable Install
 
@@ -127,14 +164,14 @@ package index:
 
 ```bash
 python3 -m pip install \
-  "phi-boundary-gate @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.6.0"
+  "phi-boundary-gate @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.6.1"
 ```
 
 The NER extra works with the same fallback:
 
 ```bash
 python3 -m pip install \
-  "phi-boundary-gate[ner] @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.6.0"
+  "phi-boundary-gate[ner] @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.6.1"
 ```
 
 For short-term testing, a commit SHA is also valid:
@@ -161,8 +198,8 @@ Release publishing uses GitHub Actions and PyPI Trusted Publishing:
 5. Create and push the release tag:
 
 ```bash
-git tag v0.6.0
-git push origin v0.6.0
+git tag v0.6.1
+git push origin v0.6.1
 ```
 
 The tag workflow publishes the same built package shape to PyPI.

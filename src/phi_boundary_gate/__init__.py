@@ -1,6 +1,6 @@
 """PHI boundary gating, redaction, and audit reporting."""
 
-__version__ = "0.6.0"
+__version__ = "0.6.1"
 
 from .adapters import (
     TraceAdapter,
@@ -14,6 +14,7 @@ from .adapters import (
 )
 from .api import GuardDecision, GuardMode, ScanFinding, guard_text, redact_text, scan_text
 from .audit import AuditResult, audit_events, audit_trace
+from .external_audit import audit_external_trace
 from .compliance import (
     ComplianceContext,
     ComplianceDecision,
@@ -50,6 +51,7 @@ __all__ = [
     "TraceMapping",
     "TraceMappingError",
     "audit_events",
+    "audit_external_trace",
     "audit_trace",
     "build_conversion_diagnostics",
     "build_report",

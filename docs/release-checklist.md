@@ -19,6 +19,49 @@ Configure PyPI Trusted Publishing before the first release:
 
 Trusted Publishing avoids long-lived PyPI API tokens in GitHub Secrets.
 
+## v0.6.1
+
+Before merging the v0.6.1 release PR:
+
+```bash
+python3 -m pip install -e ".[dev]"
+ruff check src tests examples .github/scripts
+PYTHONPATH="$PWD/src:$PWD" python3 -m unittest discover -s tests -v
+PYTHONPATH="$PWD/src:$PWD" python3 -m compileall -q src tests examples .github/scripts
+PYTHONPATH="$PWD/src:$PWD" python3 -m phi_boundary_gate.cli scan-external-trace \
+  --input samples/external_traces/generic_agent_run.jsonl \
+  --mapping samples/trace_mappings/generic_agent.yml \
+  --policy samples/policies/default.yml \
+  --out /tmp/phi-direct-report.md \
+  --json /tmp/phi-direct-report.json \
+  --diagnostics /tmp/phi-direct-diagnostics.json \
+  --redacted-trace /tmp/phi-direct-redacted.jsonl
+! grep -q 'MBR-SYN-8842' /tmp/phi-direct-report.md /tmp/phi-direct-report.json
+python3 - <<'PY'
+import json
+from pathlib import Path
+
+report = json.loads(Path("/tmp/phi-direct-report.json").read_text())
+assert report["trace_path"].endswith("samples/external_traces/generic_agent_run.jsonl")
+assert any(item.get("external_content_path") for item in report["findings"])
+PY
+PYTHONPATH="$PWD/src:$PWD" python3 examples/sdk_audit_external_trace.py
+python3 -m build
+python3 -m twine check dist/*
+```
+
+After the PR is merged to `main`, rerun the release-critical tests and build,
+then create the release tag from merged `main`:
+
+```bash
+git tag v0.6.1
+git push origin v0.6.1
+```
+
+The tag workflow publishes v0.6.1 to PyPI through Trusted Publishing. Do not
+tag from the feature branch and do not manually upload the distribution with
+`twine upload`.
+
 ## v0.6.0
 
 Before merging a release PR:
