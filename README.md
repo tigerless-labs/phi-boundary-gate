@@ -479,3 +479,7 @@ Current release: `v0.6.1`.
 ## License
 
 MIT - see [LICENSE](LICENSE).
+
+---
+
+Built by [Tigerless Labs](https://github.com/tigerless-labs), the AI lab of [Tigerless](https://www.tigerless.com) — also home to [tigerless.ai](https://tigerless.ai).
