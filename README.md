@@ -482,4 +482,4 @@ MIT - see [LICENSE](LICENSE).
 
 ---
 
-Built by [Tigerless Labs](https://github.com/tigerless-labs) — the AI lab of [Tigerless](https://tigerless.ai), the company also behind [Tigerless Health Insurance](https://www.tigerless.com).
+Built by [Tigerless Labs](https://github.com/tigerless-labs) at Tigerless — the company behind [tigerless.ai](https://tigerless.ai) and [tigerless.com](https://www.tigerless.com).
