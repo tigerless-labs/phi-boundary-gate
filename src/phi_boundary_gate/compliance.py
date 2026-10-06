@@ -9,6 +9,7 @@ import yaml
 
 from .api import GuardDecision, guard_text
 from .policy import Policy
+from .semantic import SemanticResolver
 
 
 PHI_STATUSES = frozenset({"non_phi", "synthetic", "deidentified", "real_phi"})
@@ -179,6 +180,7 @@ def guard_compliance(
     context: ComplianceContext,
     *,
     enable_presidio: bool = False,
+    semantic_resolver: SemanticResolver | None = None,
 ) -> ComplianceDecision:
     _validate_context(context)
 
@@ -188,6 +190,7 @@ def guard_compliance(
         policy=phi_policy,
         mode="block_on_violation",
         enable_presidio=enable_presidio,
+        semantic_resolver=semantic_resolver,
     )
     service = compliance_policy.match_service(context)
     env_policy = compliance_policy.environments.get(context.environment, EnvironmentPolicy())

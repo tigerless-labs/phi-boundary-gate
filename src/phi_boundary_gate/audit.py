@@ -6,6 +6,7 @@ from typing import Any
 
 from .policy import Policy
 from .report import ReportValueMode, build_report, render_markdown, write_json_report, write_markdown_report
+from .semantic import SemanticResolver
 from .trace import TraceEvent, load_trace
 
 
@@ -53,6 +54,7 @@ def audit_events(
     trace_path: Path | str = "<events>",
     policy_path: Path | str = "<policy>",
     enable_presidio: bool = False,
+    semantic_resolver: SemanticResolver | None = None,
     report_value_mode: ReportValueMode = "raw",
 ) -> AuditResult:
     report = build_report(
@@ -61,6 +63,7 @@ def audit_events(
         Path(trace_path),
         Path(policy_path),
         enable_presidio=enable_presidio,
+        semantic_resolver=semantic_resolver,
         report_value_mode=report_value_mode,
     )
     return AuditResult(report)
@@ -72,6 +75,7 @@ def audit_trace(
     *,
     policy_path: Path | str = "<policy>",
     enable_presidio: bool = False,
+    semantic_resolver: SemanticResolver | None = None,
     report_value_mode: ReportValueMode = "raw",
 ) -> AuditResult:
     trace = load_trace(Path(trace_path))
@@ -81,5 +85,6 @@ def audit_trace(
         trace_path=trace_path,
         policy_path=policy_path,
         enable_presidio=enable_presidio,
+        semantic_resolver=semantic_resolver,
         report_value_mode=report_value_mode,
     )

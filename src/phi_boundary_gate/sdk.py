@@ -9,6 +9,7 @@ from .compliance import ComplianceContext, ComplianceDecision, CompliancePolicy,
 from .policy import Policy, load_policy
 from .project import ProjectConfig, discover_project_config
 from .report import ReportValueMode
+from .semantic import SemanticResolver
 from .trace import TraceEvent
 
 
@@ -18,6 +19,7 @@ class PhiBoundaryGate:
     compliance_policy: CompliancePolicy | None = None
     enable_presidio: bool = False
     project_config: ProjectConfig | None = None
+    semantic_resolver: SemanticResolver | None = None
 
     @classmethod
     def from_policy_file(
@@ -26,25 +28,39 @@ class PhiBoundaryGate:
         *,
         compliance_policy: CompliancePolicy | None = None,
         enable_presidio: bool = False,
+        semantic_resolver: SemanticResolver | None = None,
     ) -> "PhiBoundaryGate":
         return cls(
             policy=load_policy(Path(policy_path)),
             compliance_policy=compliance_policy,
             enable_presidio=enable_presidio,
+            semantic_resolver=semantic_resolver,
         )
 
     @classmethod
-    def from_project(cls, start: Path | str | None = None) -> "PhiBoundaryGate":
+    def from_project(
+        cls,
+        start: Path | str | None = None,
+        *,
+        semantic_resolver: SemanticResolver | None = None,
+    ) -> "PhiBoundaryGate":
         config = discover_project_config(Path(start) if start is not None else None)
         return cls(
             policy=config.load_policy(),
             compliance_policy=config.load_compliance_policy(),
             enable_presidio=config.enable_presidio,
+            semantic_resolver=semantic_resolver,
             project_config=config,
         )
 
     def scan(self, text: str, layer: str) -> list[ScanFinding]:
-        return scan_text(text, layer, self.policy, enable_presidio=self.enable_presidio)
+        return scan_text(
+            text,
+            layer,
+            self.policy,
+            enable_presidio=self.enable_presidio,
+            semantic_resolver=self.semantic_resolver,
+        )
 
     def guard(self, text: str, layer: str, mode: GuardMode = "report_only") -> GuardDecision:
         return guard_text(
@@ -53,6 +69,7 @@ class PhiBoundaryGate:
             policy=self.policy,
             mode=mode,
             enable_presidio=self.enable_presidio,
+            semantic_resolver=self.semantic_resolver,
         )
 
     def guard_model_input(self, text: str, mode: GuardMode = "block_on_violation") -> GuardDecision:
@@ -78,6 +95,7 @@ class PhiBoundaryGate:
             trace_path=trace_path,
             policy_path=policy_path or self._policy_path(),
             enable_presidio=self.enable_presidio,
+            semantic_resolver=self.semantic_resolver,
             report_value_mode=report_value_mode,
         )
 
@@ -93,6 +111,7 @@ class PhiBoundaryGate:
             self.policy,
             policy_path=policy_path or self._policy_path(),
             enable_presidio=self.enable_presidio,
+            semantic_resolver=self.semantic_resolver,
             report_value_mode=report_value_mode,
         )
 
@@ -137,6 +156,7 @@ class PhiBoundaryGate:
             compliance_policy=policy,
             context=context,
             enable_presidio=self.enable_presidio,
+            semantic_resolver=self.semantic_resolver,
         )
 
     def _policy_path(self) -> Path | str:
