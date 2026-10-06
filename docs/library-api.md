@@ -45,6 +45,41 @@ audit_payload = decision.to_safe_dict()
 from the current working directory. The config points to the consuming project's
 PHI policy and optional compliance policy.
 
+### Inject a semantic resolver
+
+Semantic adjudication is off unless a caller injects a provider-neutral
+`SemanticResolver`. The resolver runs after candidate detection and before the
+existing boundary policy result is returned:
+
+```python
+from phi_boundary_gate import PhiBoundaryGate, SemanticDecision
+
+class MyResolver:
+    def resolve(self, context):
+        return SemanticDecision(
+            subject_role="member",
+            information_role="claim",
+            linkage="linked",
+            semantic_disposition="likely_phi",
+            confidence=0.96,
+            reason="Candidate is linked to a synthetic member claim.",
+        )
+
+gate = PhiBoundaryGate.from_project(semantic_resolver=MyResolver())
+decision = gate.guard_model_input("Member ID: MBR-SYN-8842; claim denied")
+semantic = decision.findings[0].semantic
+```
+
+`SemanticContext` contains the complete current text segment, detected
+`Candidate`, and layer. Treat it as sensitive input. `SemanticDecision` validates
+the supported role, linkage, disposition, and confidence values. Resolver
+exceptions and invalid return values become an `uncertain` fail-safe result.
+
+Semantic output never removes or downgrades an existing detector finding in
+v0.7, including high-confidence `likely_not_phi` output. Use
+`NoopSemanticResolver` to exercise the integration path while retaining an
+`uncertain` decision and all existing policy behavior.
+
 ## Trace Audit SDK
 
 Use `PhiBoundaryGate.audit_trace()` when another service already has a normalized

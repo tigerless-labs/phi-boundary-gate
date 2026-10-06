@@ -1,7 +1,7 @@
 <h1 align="center">PHI Boundary Gate</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/release-v0.6.1-brightgreen.svg" alt="release v0.6.1" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
+  <img src="https://img.shields.io/badge/release-v0.7.0-brightgreen.svg" alt="release v0.7.0" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
 </p>
 
 **PHI Boundary Gate** detects, gates, redacts, and reports PHI candidate
@@ -23,6 +23,7 @@ calls when the configured PHI and compliance policy says the route is not allowe
 | **Boundary-first reports** | Groups repeated PHI candidates across trace events so you can see the path, not only the match. |
 | **Path-aware audit schema** | Report schema v3 records JSON content paths and external adapter paths for structured payloads. |
 | **Hybrid candidate detection** | Built-in regex rules cover common synthetic PHI variants; optional local Presidio detection can add NER-backed spans. |
+| **Semantic context gate** | An optional provider-neutral resolver classifies who a candidate represents, what information it is linked to, and its semantic PHI disposition. |
 | **Trace corpus baseline** | Synthetic trace expectations cover boundary flow, near misses, free text, structured payloads, and provider-boundary paths. |
 | **External trace adapters** | Mapping v1 can normalize generic agent JSONL into the package trace schema before scanning. |
 | **Policy-driven redaction** | YAML policy decides whether each category is allowed, should be redacted, or is a violation in each layer. |
@@ -76,7 +77,7 @@ error to stderr.
 Use the PyPI package for normal consumption:
 
 ```bash
-python3 -m pip install "phi-boundary-gate>=0.6,<0.7"
+python3 -m pip install "phi-boundary-gate>=0.7,<0.8"
 ```
 
 The consuming environment needs Python 3.11 or newer and `pip`. `pip` installs
@@ -86,7 +87,7 @@ Optional local NER support is available for projects that want Presidio-assisted
 span detection in addition to the built-in regex rules:
 
 ```bash
-python3 -m pip install "phi-boundary-gate[ner]>=0.6,<0.7"
+python3 -m pip install "phi-boundary-gate[ner]>=0.7,<0.8"
 python3 -m spacy download en_core_web_lg
 ```
 
@@ -127,11 +128,11 @@ with real PHI.
 Update consuming projects through the package index:
 
 ```bash
-python3 -m pip install --upgrade "phi-boundary-gate>=0.6,<0.7"
+python3 -m pip install --upgrade "phi-boundary-gate>=0.7,<0.8"
 ```
 
 Production projects should use a compatible version range such as
-`phi-boundary-gate>=0.6,<0.7` and let Dependabot, Renovate, or a lockfile update
+`phi-boundary-gate>=0.7,<0.8` and let Dependabot, Renovate, or a lockfile update
 workflow propose patch/minor updates through CI. Git tag installs remain a
 fallback for environments that cannot access PyPI, but they are no longer the
 primary consumption path.
@@ -259,6 +260,58 @@ development and documentation.
   adds local candidate spans but does not replace policy review.
 - Use `guard_compliance` before routing PHI-bearing text to a covered service; the
   guard enforces only the BAA/service/model facts supplied by your organization.
+
+## Semantic Context Gate
+
+Candidate detection is not confirmed PHI. In v0.7, callers can inject a
+provider-neutral `SemanticResolver` after regex or Presidio candidate detection.
+For each candidate the resolver receives the current text segment, candidate,
+and boundary layer, and returns a validated `SemanticDecision` with:
+
+- a subject role such as `patient`, `member`, `provider`, or `clinician`;
+- an information role such as `diagnosis`, `treatment`, `claim`, `payment`, or
+  `insurance`;
+- `linked`, `unlinked`, or `unclear` linkage; and
+- `likely_phi`, `likely_not_phi`, or `uncertain` semantic disposition.
+
+This distinguishes contexts such as “Patient John Smith was diagnosed with
+diabetes” from “Dr. John Smith authored this diabetes guideline,” and a member's
+denied claim from ordinary use of the verb “claims.” It also distinguishes a
+healthcare admission date from a document publication date. The semantic layer
+adjudicates candidates; it does not replace NER or the existing boundary policy.
+
+Semantic analysis is disabled by default. Inject a resolver explicitly through
+the SDK:
+
+```python
+from phi_boundary_gate import PhiBoundaryGate, SemanticDecision
+
+class ApprovedResolver:
+    def resolve(self, context):
+        # Call an organization-approved local or remote implementation here.
+        return SemanticDecision(
+            subject_role="member",
+            information_role="claim",
+            linkage="linked",
+            semantic_disposition="likely_phi",
+            confidence=0.94,
+            reason="Member identifier is linked to claim status.",
+        )
+
+gate = PhiBoundaryGate.from_project(semantic_resolver=ApprovedResolver())
+decision = gate.guard_model_input("Member ID: MBR-SYN-8842; claim denied")
+```
+
+Fail-safe behavior is unconditional in v0.7: `likely_phi`, `uncertain`,
+`likely_not_phi`, invalid resolver output, and resolver failures all preserve the
+original detector finding and policy result. There is no semantic downgrade
+option in this release. Reports include only bounded semantic labels and
+confidence, never the resolver's free-form reason or chain-of-thought.
+
+Semantic judgment is not a legal determination. External model resolvers may
+receive sensitive text and candidate values, so only use them with approved data
+handling, contracts, retention, and logging controls. This project does not
+claim HIPAA compliance.
 
 ## What It Reports
 
@@ -466,7 +519,7 @@ Run the tests:
 PYTHONPATH=src python3 -m unittest discover -s tests
 ```
 
-Current release: `v0.6.1`.
+Current release: `v0.7.0`.
 
 ## Limits
 
@@ -475,6 +528,8 @@ Current release: `v0.6.1`.
 - No medical decision-making is performed.
 - No automatic vendor contract discovery is attempted.
 - Detector results are PHI candidates and need human review.
+- Semantic decisions are single-event judgments; cross-event identity linking,
+  pronoun/coreference, entity graphs, and longitudinal context are not included.
 
 ## License
 

@@ -12,7 +12,8 @@ Top-level fields:
 - `finding_schema`: Finding schema family. Schema v3 writes `path-aware`.
 - `trace_path`: Input trace path.
 - `policy_path`: Input policy path.
-- `summary`: Finding counts by disposition and risk.
+- `summary`: Finding counts by disposition and risk, plus
+  `by_semantic_disposition` when semantic analysis is enabled.
 - `findings`: Array of PHI candidate findings.
 - `boundary_exposures`: Array of grouped PHI boundary exposure summaries.
 
@@ -40,6 +41,9 @@ Each finding contains:
 - `destinations`: Trace destinations array.
 - `policy`: Policy disposition and risk.
 - `redaction`: Suggested redaction action and replacement value.
+- `semantic`: Optional bounded semantic metadata when a resolver is enabled:
+  `subject_role`, `information_role`, `linkage`, `disposition`, and `confidence`.
+  Free-form resolver reasons and chain-of-thought are never written to reports.
 
 ## Boundary Exposure Object
 
@@ -96,3 +100,8 @@ regex rules and optional local Presidio NER can both produce false positives or
 false negatives, so findings still require caller controls and human review.
 Use `scan-trace --report-values redacted` or `--report-values hashed` when
 reports may be stored outside a PHI-approved location.
+
+Semantic metadata is contextual evidence, not a legal determination. It never
+downgrades detector or policy results in v0.7. Because a resolver receives the
+current text segment and candidate value, external implementations may process
+sensitive data even when the final report uses redacted or hashed display mode.

@@ -19,6 +19,38 @@ Configure PyPI Trusted Publishing before the first release:
 
 Trusted Publishing avoids long-lived PyPI API tokens in GitHub Secrets.
 
+## v0.7.0
+
+Before merging the v0.7.0 release PR:
+
+```bash
+python3 -m pip install -e ".[dev]"
+ruff check src tests examples .github/scripts
+PYTHONPATH="$PWD/src:$PWD" python3 -m unittest discover -s tests -v
+python3 -m unittest discover -s .github/scripts/tests -v
+PYTHONPATH="$PWD/src:$PWD" python3 -m compileall -q src tests examples .github/scripts
+python3 .github/scripts/check_release_version.py --base-ref origin/main
+python3 -m build
+python3 -m twine check dist/*
+```
+
+Install the v0.7.0 wheel into a clean virtual environment and verify the public
+semantic API and version before merge. After the PR is merged and required
+`main` checks pass, tag the merged commit only:
+
+```bash
+git switch main
+git pull --ff-only origin main
+git tag -a v0.7.0 -m "v0.7.0: Semantic Context Gate"
+git push origin v0.7.0
+```
+
+The tag workflow publishes to PyPI through Trusted Publishing. Do not manually
+upload with Twine or configure a long-lived PyPI token. Create the GitHub Release
+`v0.7.0 — Semantic Context Gate` after the tag if no repository automation does
+so; `.github/workflows/publish.yml` builds and publishes packages but does not
+create GitHub Releases.
+
 ## v0.6.1
 
 Before merging the v0.6.1 release PR:

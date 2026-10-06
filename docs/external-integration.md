@@ -5,7 +5,7 @@ source files or import private modules.
 
 ## Recommended Flow
 
-1. Install `phi-boundary-gate>=0.6,<0.7`.
+1. Install `phi-boundary-gate>=0.7,<0.8`.
 2. Run `phi-boundary-gate init` in the consuming project.
 3. Review `config/phi-policy.yml` and, if needed,
    `config/phi-compliance-policy.yml`.

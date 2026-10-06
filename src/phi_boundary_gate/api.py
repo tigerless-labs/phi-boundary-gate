@@ -6,6 +6,7 @@ from typing import Any, Literal, Mapping, Sequence
 from .actions import redaction_action, recommended_boundary_action, worst_disposition
 from .detectors import detect_candidates
 from .policy import Policy
+from .semantic import SemanticDecision, SemanticResolver, resolve_semantics
 from .trace import SUPPORTED_LAYERS, supported_layers_text
 
 GuardMode = Literal["report_only", "redact", "block_on_violation"]
@@ -25,13 +26,14 @@ class ScanFinding:
     rule: str
     redaction_action: str
     redaction: str
+    semantic: SemanticDecision | None = None
 
     @property
     def span(self) -> dict[str, int]:
         return {"start": self.start, "end": self.end}
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        payload = {
             "layer": self.layer,
             "category": self.category,
             "value": self.value,
@@ -48,6 +50,9 @@ class ScanFinding:
                 "suggested_value": self.redaction,
             },
         }
+        if self.semantic is not None:
+            payload["semantic"] = self.semantic.to_report_dict()
+        return payload
 
     def __getitem__(self, key: str) -> Any:
         return self.to_dict()[key]
@@ -101,12 +106,24 @@ class GuardDecision:
         }
 
 
-def scan_text(text: str, layer: str, policy: Policy, *, enable_presidio: bool = False) -> list[ScanFinding]:
+def scan_text(
+    text: str,
+    layer: str,
+    policy: Policy,
+    *,
+    enable_presidio: bool = False,
+    semantic_resolver: SemanticResolver | None = None,
+) -> list[ScanFinding]:
     if layer not in SUPPORTED_LAYERS:
         raise ValueError(f"unsupported layer {layer!r}; expected one of: {supported_layers_text()}")
 
     findings: list[ScanFinding] = []
     for candidate in detect_candidates(text, enable_presidio=enable_presidio):
+        semantic = (
+            resolve_semantics(semantic_resolver, text=text, candidate=candidate, layer=layer)
+            if semantic_resolver is not None
+            else None
+        )
         decision = policy.decide(candidate.category, layer)
         findings.append(
             ScanFinding(
@@ -122,6 +139,7 @@ def scan_text(text: str, layer: str, policy: Policy, *, enable_presidio: bool = 
                 rule=decision.rule,
                 redaction_action=redaction_action(decision.disposition),
                 redaction=decision.redaction,
+                semantic=semantic,
             )
         )
     return findings
@@ -142,11 +160,18 @@ def guard_text(
     mode: GuardMode = "report_only",
     *,
     enable_presidio: bool = False,
+    semantic_resolver: SemanticResolver | None = None,
 ) -> GuardDecision:
     if mode not in ("report_only", "redact", "block_on_violation"):
         raise ValueError("mode must be one of: report_only, redact, block_on_violation")
 
-    findings = scan_text(text, layer, policy, enable_presidio=enable_presidio)
+    findings = scan_text(
+        text,
+        layer,
+        policy,
+        enable_presidio=enable_presidio,
+        semantic_resolver=semantic_resolver,
+    )
     redacted_text = redact_text(text, findings)
     dispositions = [finding.disposition for finding in findings]
     worst = worst_disposition(dispositions)

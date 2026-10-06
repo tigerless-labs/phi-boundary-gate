@@ -8,6 +8,7 @@ from typing import Any, Literal
 from .actions import DISPOSITION_RANK, recommended_boundary_action, redaction_action
 from .detectors import detect_candidates
 from .policy import Policy
+from .semantic import SemanticResolver, resolve_semantics
 from .structured_content import content_segments, external_content_path
 from .trace import TraceEvent
 
@@ -22,6 +23,7 @@ def build_report(
     policy_path: Path,
     *,
     enable_presidio: bool = False,
+    semantic_resolver: SemanticResolver | None = None,
     report_value_mode: ReportValueMode = "raw",
 ) -> dict[str, Any]:
     _validate_report_value_mode(report_value_mode)
@@ -37,6 +39,8 @@ def build_report(
                         content_path=segment.path,
                         finding_number=len(findings) + 1,
                         policy=policy,
+                        semantic_resolver=semantic_resolver,
+                        context_text=segment.text,
                     )
                 )
 
@@ -60,10 +64,17 @@ def _finding_from_candidate(
     content_path: str | None,
     finding_number: int,
     policy: Policy,
+    semantic_resolver: SemanticResolver | None,
+    context_text: str,
 ) -> dict[str, Any]:
     decision = policy.decide(candidate.category, event.layer)
+    semantic = (
+        resolve_semantics(semantic_resolver, text=context_text, candidate=candidate, layer=event.layer)
+        if semantic_resolver is not None
+        else None
+    )
     metadata_paths = event.metadata.get("external_content_paths")
-    return {
+    finding = {
         "finding_id": f"finding-{finding_number:03d}",
         "event_id": event.event_id,
         "layer": event.layer,
@@ -88,6 +99,9 @@ def _finding_from_candidate(
             "suggested_value": decision.redaction,
         },
     }
+    if semantic is not None:
+        finding["semantic"] = semantic.to_report_dict()
+    return finding
 
 
 def write_json_report(report: dict[str, Any], path: Path) -> None:
@@ -173,6 +187,12 @@ def render_markdown(report: dict[str, Any]) -> str:
                 f"### {finding['finding_id']}",
                 "",
                 f"- Detector: {finding['reason']} Confidence: {finding['confidence']:.2f}.",
+            ]
+        )
+        if finding.get("semantic") is not None:
+            lines.append(_semantic_markdown(finding))
+        lines.extend(
+            [
                 f"- Policy: {finding['policy']['rule']}",
                 f"- Content path: `{finding.get('content_path') or ''}`",
                 f"- External content path: `{finding.get('external_content_path') or ''}`",
@@ -191,6 +211,7 @@ def _summary(findings: list[dict[str, Any]], boundary_exposures: list[dict[str, 
     by_category: dict[str, int] = {}
     by_worst_disposition: dict[str, int] = {}
     high_risk_findings = 0
+    by_semantic_disposition: dict[str, int] = {}
 
     for finding in findings:
         disposition = finding["policy"]["disposition"]
@@ -201,12 +222,16 @@ def _summary(findings: list[dict[str, Any]], boundary_exposures: list[dict[str, 
         by_category[category] = by_category.get(category, 0) + 1
         if finding["policy"]["risk"] == "high":
             high_risk_findings += 1
+        semantic = finding.get("semantic")
+        if semantic is not None:
+            semantic_disposition = semantic["disposition"]
+            by_semantic_disposition[semantic_disposition] = by_semantic_disposition.get(semantic_disposition, 0) + 1
 
     for exposure in boundary_exposures:
         worst_disposition = exposure["worst_disposition"]
         by_worst_disposition[worst_disposition] = by_worst_disposition.get(worst_disposition, 0) + 1
 
-    return {
+    summary = {
         "total_findings": len(findings),
         "total_boundary_exposures": len(boundary_exposures),
         "high_risk_findings": high_risk_findings,
@@ -215,6 +240,19 @@ def _summary(findings: list[dict[str, Any]], boundary_exposures: list[dict[str, 
         "by_layer": by_layer,
         "by_category": by_category,
     }
+    if by_semantic_disposition:
+        summary["by_semantic_disposition"] = by_semantic_disposition
+    return summary
+
+
+def _semantic_markdown(finding: dict[str, Any]) -> str:
+    semantic = finding.get("semantic")
+    if semantic is None:
+        raise ValueError("finding has no semantic metadata")
+    return (
+        "- Semantic: {disposition} ({confidence:.2f}); subject={subject_role}; "
+        "information={information_role}; linkage={linkage}."
+    ).format(**semantic)
 
 
 def _boundary_exposures(findings: list[dict[str, Any]]) -> list[dict[str, Any]]:
