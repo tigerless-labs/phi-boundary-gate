@@ -1,6 +1,6 @@
 """PHI boundary gating, redaction, and audit reporting."""
 
-__version__ = "0.6.1"
+__version__ = "0.7.0"
 
 from .adapters import (
     TraceAdapter,
@@ -28,6 +28,16 @@ from .policy import load_policy
 from .project import ProjectConfig, check_project_config, discover_project_config, init_project, load_project_config
 from .redacted_trace import redacted_trace_events, write_redacted_trace
 from .report import build_report, render_markdown, write_json_report, write_markdown_report
+from .semantic import (
+    InformationRole,
+    Linkage,
+    NoopSemanticResolver,
+    SemanticContext,
+    SemanticDecision,
+    SemanticDisposition,
+    SemanticResolver,
+    SubjectRole,
+)
 from .sdk import PhiBoundaryGate
 from .trace import TraceEvent, load_trace
 
@@ -42,6 +52,14 @@ __all__ = [
     "ProjectConfig",
     "ScanFinding",
     "ServiceProfile",
+    "SemanticContext",
+    "SemanticDecision",
+    "SemanticDisposition",
+    "SemanticResolver",
+    "NoopSemanticResolver",
+    "SubjectRole",
+    "InformationRole",
+    "Linkage",
     "PhiBoundaryGateError",
     "PolicyError",
     "ProjectConfigError",
