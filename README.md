@@ -1,7 +1,7 @@
 <h1 align="center">PHI Boundary Gate</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/release-v0.7.0-brightgreen.svg" alt="release v0.7.0" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
+  <img src="https://img.shields.io/badge/target-v0.8.0-blueviolet.svg" alt="target v0.8.0" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
 </p>
 
 **PHI Boundary Gate** detects, gates, redacts, and reports PHI candidate
@@ -21,6 +21,7 @@ calls when the configured PHI and compliance policy says the route is not allowe
 | | |
 |---|---|
 | **Boundary-first reports** | Groups repeated PHI candidates across trace events so you can see the path, not only the match. |
+| **Exposure change analysis** | Compares two JSON audit reports to show newly observed, absent, disposition-changed, and frequency-changed structural routes. |
 | **Path-aware audit schema** | Report schema v3 records JSON content paths and external adapter paths for structured payloads. |
 | **Hybrid candidate detection** | Built-in regex rules cover common synthetic PHI variants; optional local Presidio detection can add NER-backed spans. |
 | **Semantic context gate** | An optional provider-neutral resolver classifies who a candidate represents, what information it is linked to, and its semantic PHI disposition. |
@@ -76,8 +77,11 @@ error to stderr.
 
 Use the PyPI package for normal consumption:
 
+The commands below target v0.8.0 after maintainers publish it. While this PR is
+under review, v0.7.0 remains the current published release.
+
 ```bash
-python3 -m pip install "phi-boundary-gate>=0.7,<0.8"
+python3 -m pip install "phi-boundary-gate>=0.8,<0.9"
 ```
 
 The consuming environment needs Python 3.11 or newer and `pip`. `pip` installs
@@ -87,7 +91,7 @@ Optional local NER support is available for projects that want Presidio-assisted
 span detection in addition to the built-in regex rules:
 
 ```bash
-python3 -m pip install "phi-boundary-gate[ner]>=0.7,<0.8"
+python3 -m pip install "phi-boundary-gate[ner]>=0.8,<0.9"
 python3 -m spacy download en_core_web_lg
 ```
 
@@ -128,11 +132,11 @@ with real PHI.
 Update consuming projects through the package index:
 
 ```bash
-python3 -m pip install --upgrade "phi-boundary-gate>=0.7,<0.8"
+python3 -m pip install --upgrade "phi-boundary-gate>=0.8,<0.9"
 ```
 
 Production projects should use a compatible version range such as
-`phi-boundary-gate>=0.7,<0.8` and let Dependabot, Renovate, or a lockfile update
+`phi-boundary-gate>=0.8,<0.9` and let Dependabot, Renovate, or a lockfile update
 workflow propose patch/minor updates through CI. Git tag installs remain a
 fallback for environments that cannot access PyPI, but they are no longer the
 primary consumption path.
@@ -161,6 +165,27 @@ The existing `convert-trace -> validate-trace -> scan-trace` workflow remains
 available when you want to inspect or persist the normalization stage. See
 [`docs/direct-external-audit.md`](docs/direct-external-audit.md) for SDK usage,
 diagnostics, and safety notes.
+
+### Compare two audit reports
+
+`compare-reports` performs advisory exposure-change analysis over two schema v3
+JSON reports. Differences do not fail the command or alter Guard behavior:
+
+```bash
+phi-boundary-gate compare-reports \
+  --before baseline-report.json \
+  --after candidate-report.json \
+  --out exposure-diff.md \
+  --json exposure-diff.json
+```
+
+The comparison expands multiple destinations, ignores event IDs, timestamps,
+matched values, and input order, and uses an exact structural route key. Paths
+and source types are emitted only as SHA-256 references, so the Diff does not
+copy raw PHI or arbitrary input fields. Policy and detector fingerprints are not
+present in audit schema v3, so the output clearly reports comparability limits.
+See [Exposure Diff](docs/exposure-diff.md) for a complete synthetic scan-to-diff
+example and the versioned JSON contract.
 
 ### Convert an external agent trace
 
@@ -519,7 +544,8 @@ Run the tests:
 PYTHONPATH=src python3 -m unittest discover -s tests
 ```
 
-Current release: `v0.7.0`.
+Current published release: `v0.7.0`. This branch prepares `v0.8.0`; release and
+tag creation remain post-merge maintainer actions.
 
 ## Limits
 

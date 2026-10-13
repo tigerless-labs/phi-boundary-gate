@@ -22,8 +22,8 @@
       "vehicle_id",
       "zip_code"
     ],
-    "event_count": 34,
-    "finding_count": 75,
+    "event_count": 37,
+    "finding_count": 80,
     "layers_seen": [
       "debug_log",
       "memory",
@@ -32,7 +32,7 @@
       "tool_output",
       "user_message"
     ],
-    "trace_count": 7
+    "trace_count": 9
   },
   "traces": [
     {
@@ -98,6 +98,42 @@
       },
       "purpose": "Expanded synthetic PHI variants for common US healthcare and insurance identifiers.",
       "trace": "samples/traces/expanded_phi_variants.jsonl"
+    },
+    {
+      "boundary_exposures": 2,
+      "categories": {
+        "claim_id": 1,
+        "member_id": 1
+      },
+      "events": 1,
+      "expectation_failures": [],
+      "expectation_status": "pass",
+      "findings": 2,
+      "kind": "positive",
+      "known_gaps": [],
+      "layers": {
+        "tool_output": 2
+      },
+      "purpose": "Synthetic baseline report input for advisory exposure diff examples.",
+      "trace": "samples/traces/exposure_diff_baseline.jsonl"
+    },
+    {
+      "boundary_exposures": 3,
+      "categories": {
+        "member_id": 2,
+        "name": 1
+      },
+      "events": 2,
+      "expectation_failures": [],
+      "expectation_status": "pass",
+      "findings": 3,
+      "kind": "positive",
+      "known_gaps": [],
+      "layers": {
+        "tool_output": 3
+      },
+      "purpose": "Synthetic candidate report input for advisory exposure diff examples.",
+      "trace": "samples/traces/exposure_diff_candidate.jsonl"
     },
     {
       "boundary_exposures": 0,

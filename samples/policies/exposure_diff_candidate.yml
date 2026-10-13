@@ -1,0 +1,10 @@
+version: 1
+categories:
+  member_id:
+    description: Synthetic insurance member identifier for the exposure diff example.
+    high_risk: true
+    deny_layers:
+      - tool_output
+    redact_layers: []
+    allow_layers: []
+    redaction: "[REDACTED_MEMBER_ID]"

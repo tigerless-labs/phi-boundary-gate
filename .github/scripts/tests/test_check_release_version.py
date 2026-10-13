@@ -56,6 +56,17 @@ class ReleaseVersionGuardTest(unittest.TestCase):
             with self.assertRaisesRegex(guard.VersionProblem, "version copies disagree"):
                 guard.assert_copies_agree(guard.collect_version_copies(repo))
 
+    def test_accepts_unreleased_target_badge(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            write_release_files(repo, "0.8.0")
+            (repo / "README.md").write_text(
+                '<img src="https://img.shields.io/badge/target-v0.8.0-blueviolet.svg" />\n',
+                encoding="utf-8",
+            )
+
+            self.assertEqual(guard.read_readme_badge_version(repo), "0.8.0")
+
     def test_requires_install_tag_examples(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             repo = Path(tmp)

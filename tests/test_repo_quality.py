@@ -10,6 +10,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from phi_boundary_gate import (  # noqa: E402
     AuditResult,
+    ExposureDiffResult,
     PhiBoundaryGate,
     PhiBoundaryGateError,
     PolicyError,
@@ -21,6 +22,8 @@ from phi_boundary_gate import (  # noqa: E402
     audit_events,
     audit_external_trace,
     audit_trace,
+    compare_audit_reports,
+    compare_report_files,
     build_report,
     load_external_trace,
     load_trace,
@@ -43,7 +46,9 @@ class RepoQualityTest(unittest.TestCase):
         install = INSTALL_DOC.read_text(encoding="utf-8")
 
         self.assertEqual(metadata["project"]["version"], __version__)
-        self.assertIn(f"release-v{__version__}", readme)
+        self.assertTrue(
+            f"release-v{__version__}" in readme or f"target-v{__version__}" in readme
+        )
         self.assertIn(f"@v{__version__}", install)
 
     def test_readme_keeps_badges_on_one_source_line(self) -> None:
@@ -83,6 +88,7 @@ class RepoQualityTest(unittest.TestCase):
 
     def test_public_sdk_api_exports_are_available(self) -> None:
         self.assertEqual(AuditResult.__name__, "AuditResult")
+        self.assertEqual(ExposureDiffResult.__name__, "ExposureDiffResult")
         self.assertEqual(PhiBoundaryGate.__name__, "PhiBoundaryGate")
         self.assertEqual(PhiBoundaryGateError.__name__, "PhiBoundaryGateError")
         self.assertEqual(PolicyError.__name__, "PolicyError")
@@ -93,6 +99,8 @@ class RepoQualityTest(unittest.TestCase):
         self.assertEqual(audit_events.__name__, "audit_events")
         self.assertEqual(audit_external_trace.__name__, "audit_external_trace")
         self.assertEqual(audit_trace.__name__, "audit_trace")
+        self.assertEqual(compare_audit_reports.__name__, "compare_audit_reports")
+        self.assertEqual(compare_report_files.__name__, "compare_report_files")
         self.assertEqual(build_report.__name__, "build_report")
         self.assertEqual(load_external_trace.__name__, "load_external_trace")
         self.assertEqual(load_trace.__name__, "load_trace")

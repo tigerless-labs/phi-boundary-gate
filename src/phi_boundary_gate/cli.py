@@ -13,6 +13,7 @@ from .adapters import (
     write_conversion_diagnostics,
     write_converted_trace,
 )
+from .exposure_diff import compare_report_files
 from .policy import load_policy
 from .project import check_project_config, init_project
 from .redacted_trace import write_redacted_trace
@@ -20,6 +21,7 @@ from .report import REPORT_VALUE_MODES, build_report, write_json_report, write_m
 from .trace import TraceEvent, load_trace, trace_event_to_dict, write_trace
 
 COMMANDS = {
+    "compare-reports",
     "init",
     "check-config",
     "convert-trace",
@@ -64,6 +66,15 @@ def main(argv: list[str] | None = None) -> int:
     scan_parser = subparsers.add_parser("scan-trace", help="Scan a JSONL trace and write audit outputs.")
     _add_scan_trace_args(scan_parser)
 
+    compare_parser = subparsers.add_parser(
+        "compare-reports",
+        help="Compare two JSON audit reports and write an advisory exposure diff.",
+    )
+    compare_parser.add_argument("--before", required=True, type=Path, help="Baseline JSON audit report.")
+    compare_parser.add_argument("--after", required=True, type=Path, help="Candidate JSON audit report.")
+    compare_parser.add_argument("--out", required=True, type=Path, help="Path for the Markdown diff.")
+    compare_parser.add_argument("--json", required=True, type=Path, dest="json_out", help="Path for the JSON diff.")
+
     mapping_parser = subparsers.add_parser("validate-mapping", help="Validate a mapping v1 YAML file.")
     mapping_parser.add_argument("--mapping", required=True, type=Path, help="Path to a mapping v1 YAML file.")
 
@@ -79,6 +90,8 @@ def main(argv: list[str] | None = None) -> int:
         return _convert_trace(args)
     if args.command == "scan-external-trace":
         return _scan_external_trace(args)
+    if args.command == "compare-reports":
+        return _compare_reports(args)
     if args.command == "validate-mapping":
         return _validate_mapping(args)
     if args.command == "validate-trace":
@@ -233,6 +246,31 @@ def _write_scan_outputs(
             markdown=markdown_out,
             json=json_out,
             redacted=redacted_note,
+        )
+    )
+    return 0
+
+
+def _compare_reports(args: argparse.Namespace) -> int:
+    try:
+        result = compare_report_files(args.before, args.after)
+        result.write_markdown(args.out)
+        result.write_json(args.json_out)
+    except (OSError, ValueError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+
+    summary = result.to_dict()["summary"]
+    print(
+        "Wrote advisory exposure diff: {markdown} and {json}; "
+        "new={new}, no-longer-observed={removed}, disposition-changed={disposition}, "
+        "frequency-changed={frequency}".format(
+            markdown=args.out,
+            json=args.json_out,
+            new=summary["new_exposures"],
+            removed=summary["no_longer_observed"],
+            disposition=summary["changed_dispositions"],
+            frequency=summary["changed_frequencies"],
         )
     )
     return 0

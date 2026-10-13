@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.8.0 (unreleased)
+
+- Added advisory JSON/Markdown Exposure Diff reports for comparing two schema v3
+  audit reports.
+- Added exact structural route keys, per-destination expansion, disposition and
+  frequency changes, stable ordering, and explicit comparability warnings.
+- Added safe path/source references that prevent the Diff from copying raw PHI,
+  raw trace content, free-form reasons, or untrusted input fields.
+- Preserved all existing scan, Guard, and optional Semantic Context Gate behavior.
+
+The published release remains v0.7.0 until maintainers merge, validate, tag, and
+publish v0.8.0.
+
 ## 0.7.0
 
 - Added the provider-neutral Semantic Context Gate with validated subject role,
