@@ -1,7 +1,7 @@
 <h1 align="center">PHI Boundary Gate</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/target-v0.8.0-blueviolet.svg" alt="target v0.8.0" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
+  <img src="https://img.shields.io/badge/release-v0.8.0-brightgreen.svg" alt="release v0.8.0" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
 </p>
 
 **PHI Boundary Gate** detects, gates, redacts, and reports PHI candidate
@@ -76,9 +76,6 @@ error to stderr.
 ### Install from another project
 
 Use the PyPI package for normal consumption:
-
-The commands below target v0.8.0 after maintainers publish it. While this PR is
-under review, v0.7.0 remains the current published release.
 
 ```bash
 python3 -m pip install "phi-boundary-gate>=0.8,<0.9"
@@ -544,8 +541,7 @@ Run the tests:
 PYTHONPATH=src python3 -m unittest discover -s tests
 ```
 
-Current published release: `v0.7.0`. This branch prepares `v0.8.0`; release and
-tag creation remain post-merge maintainer actions.
+Current release: `v0.8.0`.
 
 ## Limits
 

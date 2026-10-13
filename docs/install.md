@@ -3,8 +3,7 @@
 This project is a Python package. Other projects should import it through normal
 package installation, not by copying source files.
 
-The examples below target v0.8.0 after it is published. The current published
-release remains v0.7.0 while the Exposure Diff PR is under review.
+The examples below target v0.8.0.
 
 ## PyPI Install
 
