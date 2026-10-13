@@ -2,6 +2,9 @@
 
 The CLI writes both Markdown and JSON reports.
 
+The separate Exposure Diff contract compares two JSON audit reports without changing this
+schema. See [Exposure Diff](exposure-diff.md).
+
 ## JSON Report
 
 Top-level fields:

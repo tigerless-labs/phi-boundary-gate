@@ -142,6 +142,22 @@ result = audit_trace(
 `boundary_exposures`, `has_findings`, `has_violations`, `to_dict()`,
 `to_markdown()`, `write_json()`, and `write_markdown()`.
 
+## Compare Audit Reports
+
+Exposure Diff is also available without invoking the CLI:
+
+```python
+from phi_boundary_gate import compare_report_files
+
+diff = compare_report_files("baseline-report.json", "candidate-report.json")
+diff.write_markdown("exposure-diff.md")
+diff.write_json("exposure-diff.json")
+```
+
+The result is advisory and uses the same validated, PHI-safe contract as
+`compare-reports`. See [Exposure Diff](exposure-diff.md) for canonical key and
+comparability details.
+
 ## Stable Exceptions
 
 Package-level validation and integration errors inherit from

@@ -1,0 +1,13 @@
+trace: samples/traces/exposure_diff_candidate.jsonl
+kind: positive
+purpose: Synthetic candidate report input for advisory exposure diff examples.
+expected:
+  min_findings: 3
+  max_findings: 3
+  min_boundary_exposures: 3
+  required_categories:
+    - name
+    - member_id
+  required_layers:
+    - tool_output
+known_gaps: []

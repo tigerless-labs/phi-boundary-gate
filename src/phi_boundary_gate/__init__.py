@@ -1,6 +1,6 @@
 """PHI boundary gating, redaction, and audit reporting."""
 
-__version__ = "0.7.0"
+__version__ = "0.8.0"
 
 from .adapters import (
     TraceAdapter,
@@ -15,6 +15,15 @@ from .adapters import (
 from .api import GuardDecision, GuardMode, ScanFinding, guard_text, redact_text, scan_text
 from .audit import AuditResult, audit_events, audit_trace
 from .external_audit import audit_external_trace
+from .exposure_diff import (
+    ExposureDiffResult,
+    compare_audit_reports,
+    compare_report_files,
+    load_audit_report,
+    render_exposure_diff_markdown,
+    write_exposure_diff_json,
+    write_exposure_diff_markdown,
+)
 from .compliance import (
     ComplianceContext,
     ComplianceDecision,
@@ -48,6 +57,7 @@ __all__ = [
     "GuardDecision",
     "GuardMode",
     "AuditResult",
+    "ExposureDiffResult",
     "PhiBoundaryGate",
     "ProjectConfig",
     "ScanFinding",
@@ -71,6 +81,8 @@ __all__ = [
     "audit_events",
     "audit_external_trace",
     "audit_trace",
+    "compare_audit_reports",
+    "compare_report_files",
     "build_conversion_diagnostics",
     "build_report",
     "check_project_config",
@@ -79,6 +91,7 @@ __all__ = [
     "guard_text",
     "init_project",
     "load_compliance_policy",
+    "load_audit_report",
     "load_external_trace",
     "load_policy",
     "load_project_config",
@@ -87,9 +100,12 @@ __all__ = [
     "redact_text",
     "redacted_trace_events",
     "render_markdown",
+    "render_exposure_diff_markdown",
     "scan_text",
     "validate_trace_mapping",
     "write_conversion_diagnostics",
+    "write_exposure_diff_json",
+    "write_exposure_diff_markdown",
     "write_json_report",
     "write_markdown_report",
     "write_converted_trace",

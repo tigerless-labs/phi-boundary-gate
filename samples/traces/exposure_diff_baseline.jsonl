@@ -1,0 +1,1 @@
+{"event_id":"baseline-001","timestamp":"2026-10-13T08:00:00Z","layer":"tool_output","source":{"type":"synthetic_claim_lookup","path":"tools.claim_lookup.response"},"destinations":[{"layer":"model_input","path":"prompt.context[0]"}],"metadata":{"external_content_paths":["payload"]},"content":"{\"member_id\":\"member_id=MBR-SYN-31001\",\"claim_id\":\"claim_id=CLM-SYN-31001\"}"}

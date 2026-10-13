@@ -11,7 +11,7 @@ from pathlib import Path
 
 VERSION_RE = re.compile(r"^\d+\.\d+\.\d+$")
 INIT_VERSION_RE = re.compile(r'^__version__ = "([^"]+)"$', re.M)
-README_BADGE_RE = re.compile(r"badge/release-v(\d+\.\d+\.\d+)-")
+README_BADGE_RE = re.compile(r"badge/(?:release|target)-v(\d+\.\d+\.\d+)-")
 INSTALL_TAG_RE = re.compile(r"phi-boundary-gate(?:\[ner\])? @ .*?@v(\d+\.\d+\.\d+)")
 
 VERSION_FILES = (
@@ -61,7 +61,7 @@ def read_init_version(repo_root: Path) -> str:
 def read_readme_badge_version(repo_root: Path) -> str:
     match = README_BADGE_RE.search(read_text(repo_root, "README.md"))
     if not match:
-        raise VersionProblem("README.md has no release-vX.Y.Z badge")
+        raise VersionProblem("README.md has no target-vX.Y.Z or release-vX.Y.Z badge")
     return match.group(1)
 
 

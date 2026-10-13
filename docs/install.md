@@ -3,18 +3,20 @@
 This project is a Python package. Other projects should import it through normal
 package installation, not by copying source files.
 
+The examples below target v0.8.0.
+
 ## PyPI Install
 
 Use PyPI for normal consumption:
 
 ```bash
-python3 -m pip install "phi-boundary-gate>=0.7,<0.8"
+python3 -m pip install "phi-boundary-gate>=0.8,<0.9"
 ```
 
 For `requirements.txt`:
 
 ```text
-phi-boundary-gate>=0.7,<0.8
+phi-boundary-gate>=0.8,<0.9
 ```
 
 For `pyproject.toml`:
@@ -22,7 +24,7 @@ For `pyproject.toml`:
 ```toml
 [project]
 dependencies = [
-  "phi-boundary-gate>=0.7,<0.8",
+  "phi-boundary-gate>=0.8,<0.9",
 ]
 ```
 
@@ -38,7 +40,7 @@ Presidio-assisted NER detection, install the optional `ner` extra and a spaCy
 English model in the consuming environment:
 
 ```bash
-python3 -m pip install "phi-boundary-gate[ner]>=0.7,<0.8"
+python3 -m pip install "phi-boundary-gate[ner]>=0.8,<0.9"
 python3 -m spacy download en_core_web_lg
 ```
 
@@ -164,14 +166,14 @@ package index:
 
 ```bash
 python3 -m pip install \
-  "phi-boundary-gate @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.7.0"
+  "phi-boundary-gate @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.8.0"
 ```
 
 The NER extra works with the same fallback:
 
 ```bash
 python3 -m pip install \
-  "phi-boundary-gate[ner] @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.7.0"
+  "phi-boundary-gate[ner] @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.8.0"
 ```
 
 For short-term testing, a commit SHA is also valid:
@@ -198,8 +200,8 @@ Release publishing uses GitHub Actions and PyPI Trusted Publishing:
 5. Create and push the release tag:
 
 ```bash
-git tag -a v0.7.0 -m "v0.7.0: Semantic Context Gate"
-git push origin v0.7.0
+git tag -a v0.8.0 -m "v0.8.0: Exposure Diff"
+git push origin v0.8.0
 ```
 
 The tag workflow publishes the same built package shape to PyPI.

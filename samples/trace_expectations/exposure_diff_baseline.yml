@@ -1,0 +1,13 @@
+trace: samples/traces/exposure_diff_baseline.jsonl
+kind: positive
+purpose: Synthetic baseline report input for advisory exposure diff examples.
+expected:
+  min_findings: 2
+  max_findings: 2
+  min_boundary_exposures: 2
+  required_categories:
+    - member_id
+    - claim_id
+  required_layers:
+    - tool_output
+known_gaps: []
