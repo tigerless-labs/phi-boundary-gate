@@ -38,8 +38,9 @@ python3 -m json.tool /tmp/phi-exposure-diff/diff.json
 
 The example produces one newly observed `name` route, one no-longer-observed `claim_id`
 route, and a frequency and policy-disposition change for the existing `member_id` route.
-Because the reports refer to different policies, the result is explicitly `limited`: the
-disposition change must not be attributed solely to Agent behavior.
+The normalized policy fingerprints differ, so the result is explicitly `limited`: the
+disposition change may be configuration-driven and must not be attributed solely to Agent
+behavior.
 
 ## Canonical exposure key
 
@@ -87,17 +88,39 @@ references rather than filenames.
 
 The comparison is deterministic and does not modify either input report.
 
-## Comparability limits
+## Configuration provenance and comparability
 
-Audit report schema v3 records a policy path, but not a fingerprint of policy contents or
-detector configuration. Exposure Diff therefore reports `comparable_with_limitations` even when
-the policy references match, and `limited` when they differ. A changed disposition is an observed
-report difference; it is not proof that the Agent changed.
+v0.8.1 audit reports retain schema version 3 and add optional `audit_context` evidence. Policy
+fingerprints come from normalized effective policy objects, not paths or YAML field order.
+Detector fingerprints cover the enabled built-in rules and Presidio enablement. An enabled
+Presidio Analyzer's external model/configuration cannot be verified and is explicitly `unknown`.
+SDK callers can identify a Semantic Resolver configuration with `semantic_resolver_id`; only a
+SHA-256 fingerprint of that identifier is retained. An enabled resolver without an ID is unknown.
+
+Diff schema v1 preserves `comparability.status` and adds:
+
+- `structural`: whether the schema-defined route key shapes can be compared, plus whether detector
+  evidence limits interpretation of the observed route population;
+- `disposition`: whether observed risk-level changes have a comparable configuration basis;
+- `reason_codes` and `diagnostics`: deterministic machine-readable explanations of matches,
+  drift, missing evidence, and unknown external configuration.
+
+The content fingerprint, rather than the policy path, determines effective policy equality. A
+single path whose contents change is flagged with `POLICY_CONTENT_CHANGED_AT_SAME_REFERENCE`.
+Different paths with the same normalized policy are not treated as policy drift. v0.8.0 reports
+without `audit_context` remain valid inputs and receive `AUDIT_PROVENANCE_INCOMPLETE` with limited
+comparability.
+
+A changed disposition is an observed report difference, not proof that the Agent changed. Each
+changed group has a direction based on its worst disposition rank: `worsened`, `improved`, or
+`mixed_or_other`. A changed set whose worst disposition is unchanged is never forced into an
+improvement or worsening category. Summary direction counts always equal the number of changed
+disposition groups.
 
 Semantic Context Gate metadata is optional and remains disabled by default. Exposure Diff does
-not invoke an LLM, external provider, or resolver, compare semantic decisions, lower a policy disposition, or change the
-resolver injection API. Mismatched or partial semantic coverage is reported as limited and
-semantic fields are excluded from the canonical key and output.
+not invoke an LLM, external provider, or resolver, compare semantic decisions, lower a policy
+disposition, or alter Guard decisions. Mismatched, unknown, or partial semantic evidence limits
+comparability; semantic fields remain excluded from the canonical key and output.
 
 `New Exposure` means that a candidate route appears only in the after report. It is not automatic
 proof of a new real-world PHI leak. `No Longer Observed` means only that a route is absent from the

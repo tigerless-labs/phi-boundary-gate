@@ -13,6 +13,7 @@ from phi_boundary_gate.cli import main
 from phi_boundary_gate.exposure_diff import compare_audit_reports, compare_report_files
 from phi_boundary_gate.policy import Policy, load_policy
 from phi_boundary_gate.report import build_report
+from phi_boundary_gate.semantic import NoopSemanticResolver
 from phi_boundary_gate.trace import TraceEvent
 
 
@@ -131,8 +132,11 @@ class ExposureDiffTest(unittest.TestCase):
         change = diff["changed_dispositions"][0]
         self.assertEqual(change["before"]["worst_disposition"], "redact")
         self.assertEqual(change["after"]["worst_disposition"], "violation")
+        self.assertEqual(change["direction"], "worsened")
+        self.assertEqual(diff["summary"]["disposition_directions"]["worsened"], 1)
         self.assertEqual(diff["comparability"]["status"], "limited")
         self.assertFalse(diff["comparability"]["policy_reference_match"])
+        self.assertIn("POLICY_FINGERPRINT_MISMATCH", diff["comparability"]["reason_codes"])
         self.assertTrue(any("Policy references differ" in warning for warning in diff["comparability"]["warnings"]))
 
     def test_same_path_frequency_counts_occurrences_and_distinct_events(self) -> None:
@@ -226,6 +230,112 @@ class ExposureDiffTest(unittest.TestCase):
         self.assertEqual(diff["summary"]["after_exposure_groups"], 0)
         self.assertEqual(diff["new_exposures"], [])
         self.assertEqual(diff["comparability"]["semantic"]["before_coverage"], "not_observable")
+
+    def test_same_policy_reference_with_changed_content_detects_drift(self) -> None:
+        events = [event("evt-1", {"member_id": "member_id=MBR-SYN-10001"})]
+        before = report(events, policy_path="config/shared.yml")
+        after = report(
+            events,
+            policy=policy_with_member_denied_in_tool_output(),
+            policy_path="config/shared.yml",
+        )
+
+        comparability = compare_audit_reports(before, after).to_dict()["comparability"]
+
+        self.assertTrue(comparability["policy_reference_match"])
+        self.assertEqual(comparability["policy_fingerprint_comparison"], "mismatch")
+        self.assertIn("POLICY_CONTENT_CHANGED_AT_SAME_REFERENCE", comparability["reason_codes"])
+
+    def test_different_policy_references_with_same_effective_policy_do_not_drift(self) -> None:
+        events = [event("evt-1", {"member_id": "member_id=MBR-SYN-10001"})]
+        before = report(events, policy_path="config/first.yml")
+        after = report(events, policy_path="config/second.yml")
+
+        comparability = compare_audit_reports(before, after).to_dict()["comparability"]
+
+        self.assertFalse(comparability["policy_reference_match"])
+        self.assertEqual(comparability["policy_fingerprint_comparison"], "match")
+        self.assertEqual(comparability["status"], "comparable_with_limitations")
+        self.assertIn("POLICY_REFERENCE_CHANGED_EFFECTIVE_POLICY_MATCH", comparability["reason_codes"])
+
+    def test_presidio_detector_and_semantic_configuration_diagnostics(self) -> None:
+        policy = load_policy(POLICY_PATH)
+        baseline = build_report([], policy, Path("trace.jsonl"), Path("policy.yml"))
+        presidio = build_report(
+            [],
+            policy,
+            Path("trace.jsonl"),
+            Path("policy.yml"),
+            enable_presidio=True,
+        )
+        semantic_unknown = build_report(
+            [],
+            policy,
+            Path("trace.jsonl"),
+            Path("policy.yml"),
+            semantic_resolver=NoopSemanticResolver(),
+        )
+        semantic_first = build_report(
+            [],
+            policy,
+            Path("trace.jsonl"),
+            Path("policy.yml"),
+            semantic_resolver=NoopSemanticResolver(),
+            semantic_resolver_id="resolver/config-v1",
+        )
+        semantic_second = build_report(
+            [],
+            policy,
+            Path("trace.jsonl"),
+            Path("policy.yml"),
+            semantic_resolver=NoopSemanticResolver(),
+            semantic_resolver_id="resolver/config-v2",
+        )
+
+        detector_diff = compare_audit_reports(baseline, presidio).to_dict()["comparability"]
+        presidio_unknown = compare_audit_reports(presidio, copy.deepcopy(presidio)).to_dict()["comparability"]
+        unknown_diff = compare_audit_reports(semantic_unknown, semantic_unknown).to_dict()["comparability"]
+        semantic_diff = compare_audit_reports(semantic_first, semantic_second).to_dict()["comparability"]
+
+        self.assertIn("DETECTOR_FINGERPRINT_MISMATCH", detector_diff["reason_codes"])
+        self.assertIn("PRESIDIO_ENABLEMENT_MISMATCH", detector_diff["reason_codes"])
+        self.assertIn("PRESIDIO_CONFIGURATION_UNKNOWN", presidio_unknown["reason_codes"])
+        self.assertIn("SEMANTIC_CONFIGURATION_UNKNOWN", unknown_diff["reason_codes"])
+        self.assertIn("SEMANTIC_CONFIGURATION_MISMATCH", semantic_diff["reason_codes"])
+
+    def test_legacy_v080_reports_are_comparable_with_incomplete_provenance(self) -> None:
+        before = report([event("evt-1", {"member_id": "member_id=MBR-SYN-10001"})])
+        after = copy.deepcopy(before)
+        before.pop("audit_context")
+        after.pop("audit_context")
+
+        diff = compare_audit_reports(before, after).to_dict()
+
+        self.assertEqual(diff["summary"]["unchanged"], 1)
+        self.assertFalse(diff["comparability"]["provenance_complete"])
+        self.assertEqual(diff["comparability"]["status"], "limited")
+        self.assertIn("AUDIT_PROVENANCE_INCOMPLETE", diff["comparability"]["reason_codes"])
+
+    def test_improved_and_equal_worst_set_change_directions(self) -> None:
+        events = [event("evt-1", {"member_id": "member_id=MBR-SYN-10001"})]
+        violation = report(events, policy=policy_with_member_denied_in_tool_output())
+        redact = report(events)
+
+        improved = compare_audit_reports(violation, redact).to_dict()
+        self.assertEqual(improved["changed_dispositions"][0]["direction"], "improved")
+        self.assertEqual(improved["summary"]["disposition_directions"]["improved"], 1)
+
+        mixed_after = copy.deepcopy(violation)
+        extra = copy.deepcopy(mixed_after["findings"][0])
+        extra["finding_id"] = "finding-999"
+        extra["event_id"] = "evt-2"
+        extra["policy"]["disposition"] = "allowed"
+        mixed_after["findings"].append(extra)
+        mixed = compare_audit_reports(violation, mixed_after).to_dict()
+
+        self.assertEqual(mixed["changed_dispositions"][0]["direction"], "mixed_or_other")
+        self.assertEqual(mixed["summary"]["disposition_directions"]["mixed_or_other"], 1)
+        self.assertEqual(sum(mixed["summary"]["disposition_directions"].values()), 1)
 
     def test_missing_fields_and_incompatible_schema_are_rejected(self) -> None:
         valid = report([event("evt-1", {"member_id": "member_id=MBR-SYN-10001"})])

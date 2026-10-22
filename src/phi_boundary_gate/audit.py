@@ -55,6 +55,7 @@ def audit_events(
     policy_path: Path | str = "<policy>",
     enable_presidio: bool = False,
     semantic_resolver: SemanticResolver | None = None,
+    semantic_resolver_id: str | None = None,
     report_value_mode: ReportValueMode = "raw",
 ) -> AuditResult:
     report = build_report(
@@ -64,6 +65,7 @@ def audit_events(
         Path(policy_path),
         enable_presidio=enable_presidio,
         semantic_resolver=semantic_resolver,
+        semantic_resolver_id=semantic_resolver_id,
         report_value_mode=report_value_mode,
     )
     return AuditResult(report)
@@ -76,6 +78,7 @@ def audit_trace(
     policy_path: Path | str = "<policy>",
     enable_presidio: bool = False,
     semantic_resolver: SemanticResolver | None = None,
+    semantic_resolver_id: str | None = None,
     report_value_mode: ReportValueMode = "raw",
 ) -> AuditResult:
     trace = load_trace(Path(trace_path))
@@ -86,5 +89,6 @@ def audit_trace(
         policy_path=policy_path,
         enable_presidio=enable_presidio,
         semantic_resolver=semantic_resolver,
+        semantic_resolver_id=semantic_resolver_id,
         report_value_mode=report_value_mode,
     )

@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.8.1
+
+- Added optional Audit Report Schema v3 `audit_context` provenance with stable
+  fingerprints for normalized effective policy and detector configuration.
+- Added explicit Presidio and Semantic Resolver configuration evidence;
+  unverifiable external analyzer/model state and unidentified resolver state are
+  reported as unknown rather than inferred.
+- Added structural and disposition comparability diagnostics, machine-readable
+  reason codes, same-reference policy-content drift detection, and recognition
+  of equivalent policies loaded from different paths.
+- Added `worsened`, `improved`, and `mixed_or_other` direction to changed
+  disposition groups and matching summary counts.
+- Preserved compatibility with v0.8.0 schema-v3 reports by accepting missing
+  provenance and marking the comparison limited.
+
+Exposure Diff remains advisory: differences do not create a CI hard gate,
+change Guard decisions, or establish that Agent behavior caused an observed
+change. Reports and Diffs do not add raw PHI, prompts, secrets, resolver
+rationale, or unhashed route paths.
+
 ## 0.8.0
 
 - Added advisory JSON/Markdown Exposure Diff reports for comparing two schema v3

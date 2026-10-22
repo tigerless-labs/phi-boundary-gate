@@ -1,6 +1,6 @@
 """PHI boundary gating, redaction, and audit reporting."""
 
-__version__ = "0.8.0"
+__version__ = "0.8.1"
 
 from .adapters import (
     TraceAdapter,

@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from .actions import DISPOSITION_RANK, recommended_boundary_action, redaction_action
+from .audit_context import build_audit_context
 from .detectors import detect_candidates
 from .policy import Policy
 from .semantic import SemanticResolver, resolve_semantics
@@ -24,6 +25,7 @@ def build_report(
     *,
     enable_presidio: bool = False,
     semantic_resolver: SemanticResolver | None = None,
+    semantic_resolver_id: str | None = None,
     report_value_mode: ReportValueMode = "raw",
 ) -> dict[str, Any]:
     _validate_report_value_mode(report_value_mode)
@@ -51,6 +53,12 @@ def build_report(
         "finding_schema": "path-aware",
         "trace_path": str(trace_path),
         "policy_path": str(policy_path),
+        "audit_context": build_audit_context(
+            policy,
+            enable_presidio=enable_presidio,
+            semantic_enabled=semantic_resolver is not None,
+            semantic_resolver_id=semantic_resolver_id,
+        ),
         "summary": _summary(findings, boundary_exposures),
         "boundary_exposures": _display_boundary_exposures(boundary_exposures, report_value_mode),
         "findings": _display_findings(findings, report_value_mode),
@@ -122,6 +130,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- Trace: `{report['trace_path']}`",
         f"- Policy: `{report['policy_path']}`",
         f"- Report value mode: `{report.get('report_value_mode', 'raw')}`",
+        f"- Audit configuration fingerprint version: `{report.get('audit_context', {}).get('fingerprint_version', 'not recorded')}`",
         f"- Total PHI candidates: {summary['total_findings']}",
         f"- Boundary exposures: {summary['total_boundary_exposures']}",
         f"- Violations: {summary['by_disposition'].get('violation', 0)}",

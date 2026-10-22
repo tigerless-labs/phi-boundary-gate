@@ -15,10 +15,42 @@ Top-level fields:
 - `finding_schema`: Finding schema family. Schema v3 writes `path-aware`.
 - `trace_path`: Input trace path.
 - `policy_path`: Input policy path.
+- `audit_context`: Optional schema-v3 provenance written by v0.8.1 and newer.
+  It records fingerprint version `1`, SHA-256 fingerprints of normalized
+  effective policy and detector configuration, Presidio enablement/configuration
+  status, and Semantic Resolver enablement/configuration status.
 - `summary`: Finding counts by disposition and risk, plus
   `by_semantic_disposition` when semantic analysis is enabled.
 - `findings`: Array of PHI candidate findings.
 - `boundary_exposures`: Array of grouped PHI boundary exposure summaries.
+
+`policy_fingerprint` is independent of YAML field order and policy path. It
+includes decision-relevant policy fields after parsing. `detector_fingerprint`
+includes the bundled detector rules and Presidio enablement. When Presidio is
+enabled, external Analyzer/model configuration is marked `unknown` because the
+audit pipeline cannot verify it.
+
+SDK callers may pass a stable, non-sensitive `semantic_resolver_id`. The report
+stores only its SHA-256 fingerprint. When a resolver is enabled without an ID,
+semantic configuration is `unknown`. Reports never put the original identifier,
+raw PHI, prompts, secrets, or free-form resolver reasons in `audit_context`.
+
+The field is optional so existing v0.8.0 schema-v3 reports remain valid.
+
+```json
+{
+  "audit_context": {
+    "fingerprint_version": 1,
+    "policy_fingerprint": "sha256:<64 lowercase hex characters>",
+    "detector_fingerprint": "sha256:<64 lowercase hex characters>",
+    "presidio_enabled": false,
+    "presidio_configuration": "not_applicable",
+    "semantic_enabled": false,
+    "semantic_resolver_fingerprint": null,
+    "semantic_configuration": "not_applicable"
+  }
+}
+```
 
 ## Finding Object
 
