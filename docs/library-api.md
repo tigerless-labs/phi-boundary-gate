@@ -138,6 +138,21 @@ result = audit_trace(
 )
 ```
 
+When semantic resolution is enabled, provide a stable configuration identifier
+when one is available:
+
+```python
+gate = PhiBoundaryGate.from_policy_file(
+    "config/phi-policy.yml",
+    semantic_resolver=resolver,
+    semantic_resolver_id="approved-resolver/config-v1",
+)
+```
+
+Only a SHA-256 fingerprint of that identifier is stored in `audit_context`.
+Omit the ID when it cannot be established reliably; the report will explicitly
+mark semantic configuration as unknown.
+
 `AuditResult` wraps the report dictionary and exposes `summary`, `findings`,
 `boundary_exposures`, `has_findings`, `has_violations`, `to_dict()`,
 `to_markdown()`, `write_json()`, and `write_markdown()`.

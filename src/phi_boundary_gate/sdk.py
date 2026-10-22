@@ -20,6 +20,7 @@ class PhiBoundaryGate:
     enable_presidio: bool = False
     project_config: ProjectConfig | None = None
     semantic_resolver: SemanticResolver | None = None
+    semantic_resolver_id: str | None = None
 
     @classmethod
     def from_policy_file(
@@ -29,12 +30,14 @@ class PhiBoundaryGate:
         compliance_policy: CompliancePolicy | None = None,
         enable_presidio: bool = False,
         semantic_resolver: SemanticResolver | None = None,
+        semantic_resolver_id: str | None = None,
     ) -> "PhiBoundaryGate":
         return cls(
             policy=load_policy(Path(policy_path)),
             compliance_policy=compliance_policy,
             enable_presidio=enable_presidio,
             semantic_resolver=semantic_resolver,
+            semantic_resolver_id=semantic_resolver_id,
         )
 
     @classmethod
@@ -43,6 +46,7 @@ class PhiBoundaryGate:
         start: Path | str | None = None,
         *,
         semantic_resolver: SemanticResolver | None = None,
+        semantic_resolver_id: str | None = None,
     ) -> "PhiBoundaryGate":
         config = discover_project_config(Path(start) if start is not None else None)
         return cls(
@@ -50,6 +54,7 @@ class PhiBoundaryGate:
             compliance_policy=config.load_compliance_policy(),
             enable_presidio=config.enable_presidio,
             semantic_resolver=semantic_resolver,
+            semantic_resolver_id=semantic_resolver_id,
             project_config=config,
         )
 
@@ -96,6 +101,7 @@ class PhiBoundaryGate:
             policy_path=policy_path or self._policy_path(),
             enable_presidio=self.enable_presidio,
             semantic_resolver=self.semantic_resolver,
+            semantic_resolver_id=self.semantic_resolver_id,
             report_value_mode=report_value_mode,
         )
 
@@ -112,6 +118,7 @@ class PhiBoundaryGate:
             policy_path=policy_path or self._policy_path(),
             enable_presidio=self.enable_presidio,
             semantic_resolver=self.semantic_resolver,
+            semantic_resolver_id=self.semantic_resolver_id,
             report_value_mode=report_value_mode,
         )
 

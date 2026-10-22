@@ -84,9 +84,11 @@ def compare_audit_reports(before: dict[str, Any], after: dict[str, Any]) -> Expo
         disposition_changed = before_group["dispositions"] != after_group["dispositions"]
         frequency_changed = before_group["frequency"] != after_group["frequency"]
         if disposition_changed:
+            direction = _disposition_direction(before_group, after_group)
             changed_dispositions.append(
                 {
                     "exposure": _descriptor(before_group),
+                    "direction": direction,
                     "before": {
                         "dispositions": before_group["dispositions"],
                         "worst_disposition": before_group["worst_disposition"],
@@ -109,6 +111,10 @@ def compare_audit_reports(before: dict[str, Any], after: dict[str, Any]) -> Expo
             unchanged.append(after_group)
 
     comparability = _comparability(before, after)
+    disposition_directions = {
+        direction: sum(change["direction"] == direction for change in changed_dispositions)
+        for direction in ("worsened", "improved", "mixed_or_other")
+    }
     result = {
         "schema_version": DIFF_SCHEMA_VERSION,
         "analysis_type": "advisory_exposure_diff",
@@ -124,6 +130,7 @@ def compare_audit_reports(before: dict[str, Any], after: dict[str, Any]) -> Expo
             "new_exposures": len(new_exposures),
             "no_longer_observed": len(no_longer_observed),
             "changed_dispositions": len(changed_dispositions),
+            "disposition_directions": disposition_directions,
             "changed_frequencies": len(changed_frequencies),
             "unchanged": len(unchanged),
         },
@@ -163,6 +170,10 @@ def render_exposure_diff_markdown(report: dict[str, Any]) -> str:
         "",
         f"**{comparability['status']}**",
         "",
+        f"- Structural comparability: `{comparability['structural']['status']}`",
+        f"- Disposition comparability: `{comparability['disposition']['status']}`",
+        f"- Reason codes: `{', '.join(comparability['reason_codes'])}`",
+        "",
     ]
     lines.extend(f"- {warning}" for warning in comparability["warnings"])
     lines.extend(
@@ -184,6 +195,9 @@ def render_exposure_diff_markdown(report: dict[str, Any]) -> str:
             f"- New Exposure: {summary['new_exposures']}",
             f"- No Longer Observed: {summary['no_longer_observed']}",
             f"- Changed Disposition: {summary['changed_dispositions']}",
+            f"  - Worsened: {summary['disposition_directions']['worsened']}",
+            f"  - Improved: {summary['disposition_directions']['improved']}",
+            f"  - Mixed or Other: {summary['disposition_directions']['mixed_or_other']}",
             f"- Changed Frequency: {summary['changed_frequencies']}",
             f"- Unchanged: {summary['unchanged']}",
             "",
@@ -231,6 +245,32 @@ def _validate_report(report: Any, label: str) -> None:
         raise ValueError(f"{label} report field 'findings' must be an array")
     for index, finding in enumerate(findings):
         _validate_finding(finding, label, index)
+    if "audit_context" in report:
+        _validate_audit_context(report["audit_context"], label)
+
+
+def _validate_audit_context(context: Any, label: str) -> None:
+    prefix = f"{label} report audit_context"
+    if not isinstance(context, dict):
+        raise ValueError(f"{prefix} must be an object")
+    if context.get("fingerprint_version") != 1:
+        raise ValueError(f"{prefix}.fingerprint_version must be 1")
+    for field in ("policy_fingerprint", "detector_fingerprint"):
+        value = context.get(field)
+        if not isinstance(value, str) or not _is_sha256_ref(value):
+            raise ValueError(f"{prefix}.{field} must be a sha256 reference")
+    for field in ("presidio_enabled", "semantic_enabled"):
+        if not isinstance(context.get(field), bool):
+            raise ValueError(f"{prefix}.{field} must be a boolean")
+    resolver_fingerprint = context.get("semantic_resolver_fingerprint")
+    if resolver_fingerprint is not None and (
+        not isinstance(resolver_fingerprint, str) or not _is_sha256_ref(resolver_fingerprint)
+    ):
+        raise ValueError(f"{prefix}.semantic_resolver_fingerprint must be a sha256 reference or null")
+    if context.get("presidio_configuration") not in {"unknown", "not_applicable"}:
+        raise ValueError(f"{prefix}.presidio_configuration is not supported")
+    if context.get("semantic_configuration") not in {"identified", "unknown", "not_applicable"}:
+        raise ValueError(f"{prefix}.semantic_configuration is not supported")
 
 
 def _validate_finding(finding: Any, label: str, index: int) -> None:
@@ -359,56 +399,243 @@ def _descriptor(group: dict[str, Any]) -> dict[str, Any]:
 
 
 def _comparability(before: dict[str, Any], after: dict[str, Any]) -> dict[str, Any]:
-    policy_match = before["policy_path"] == after["policy_path"]
+    policy_reference_match = before["policy_path"] == after["policy_path"]
+    before_context = before.get("audit_context")
+    after_context = after.get("audit_context")
     before_semantic = _semantic_coverage(before["findings"])
     after_semantic = _semantic_coverage(after["findings"])
     semantic_coverage_compatible = before_semantic == after_semantic and before_semantic in {
         "none",
         "complete",
+        "not_observable",
     }
+
+    policy_state = _fingerprint_comparison(before_context, after_context, "policy_fingerprint")
+    detector_state = _fingerprint_comparison(before_context, after_context, "detector_fingerprint")
+    presidio_state = _presidio_comparison(before_context, after_context)
+    semantic_state = _semantic_configuration_comparison(before_context, after_context)
+    provenance_complete = before_context is not None and after_context is not None
+
+    reason_codes: list[str] = []
+    diagnostics: list[dict[str, str]] = []
+
+    def diagnose(code: str, dimension: str, severity: str, message: str) -> None:
+        reason_codes.append(code)
+        diagnostics.append(
+            {
+                "code": code,
+                "dimension": dimension,
+                "severity": severity,
+                "message": message,
+            }
+        )
+
+    if not provenance_complete:
+        diagnose(
+            "AUDIT_PROVENANCE_INCOMPLETE",
+            "configuration",
+            "warning",
+            "One or both reports predate audit provenance; effective configuration equality cannot be established.",
+        )
+    if policy_state == "match":
+        diagnose(
+            "POLICY_FINGERPRINT_MATCH",
+            "disposition",
+            "info",
+            "Effective policy fingerprints match.",
+        )
+        if not policy_reference_match:
+            diagnose(
+                "POLICY_REFERENCE_CHANGED_EFFECTIVE_POLICY_MATCH",
+                "disposition",
+                "info",
+                "Policy references differ, but the normalized effective policy is the same.",
+            )
+    elif policy_state == "mismatch":
+        diagnose(
+            "POLICY_FINGERPRINT_MISMATCH",
+            "disposition",
+            "warning",
+            "Effective policy fingerprints differ; disposition changes may be configuration-driven.",
+        )
+        if policy_reference_match:
+            diagnose(
+                "POLICY_CONTENT_CHANGED_AT_SAME_REFERENCE",
+                "disposition",
+                "warning",
+                "The same policy reference resolved to different effective policy content.",
+            )
+    else:
+        diagnose(
+            "POLICY_FINGERPRINT_MISSING",
+            "disposition",
+            "warning",
+            "Effective policy fingerprints are unavailable.",
+        )
+
+    if detector_state == "match":
+        diagnose("DETECTOR_FINGERPRINT_MATCH", "structural", "info", "Recorded detector fingerprints match.")
+    elif detector_state == "mismatch":
+        diagnose(
+            "DETECTOR_FINGERPRINT_MISMATCH",
+            "structural",
+            "warning",
+            "Detector fingerprints differ; observed exposure populations may be configuration-driven.",
+        )
+    else:
+        diagnose(
+            "DETECTOR_FINGERPRINT_MISSING",
+            "structural",
+            "warning",
+            "Detector fingerprints are unavailable.",
+        )
+
+    if presidio_state == "mismatch":
+        diagnose(
+            "PRESIDIO_ENABLEMENT_MISMATCH",
+            "structural",
+            "warning",
+            "Presidio enablement differs between reports.",
+        )
+    elif presidio_state == "unknown":
+        diagnose(
+            "PRESIDIO_CONFIGURATION_UNKNOWN",
+            "structural",
+            "warning",
+            "Presidio external analyzer/model configuration is enabled but cannot be verified.",
+        )
+
+    if semantic_state == "match":
+        diagnose(
+            "SEMANTIC_CONFIGURATION_MATCH",
+            "semantic",
+            "info",
+            "Recorded Semantic Resolver configuration matches.",
+        )
+    elif semantic_state == "mismatch":
+        diagnose(
+            "SEMANTIC_CONFIGURATION_MISMATCH",
+            "semantic",
+            "warning",
+            "Semantic Resolver enablement or configuration differs.",
+        )
+    elif semantic_state == "unknown":
+        diagnose(
+            "SEMANTIC_CONFIGURATION_UNKNOWN",
+            "semantic",
+            "warning",
+            "An enabled Semantic Resolver lacks a stable configuration identifier.",
+        )
+    else:
+        diagnose(
+            "SEMANTIC_CONFIGURATION_MISSING",
+            "semantic",
+            "warning",
+            "Semantic Resolver provenance is unavailable.",
+        )
+    if not semantic_coverage_compatible:
+        diagnose(
+            "SEMANTIC_COVERAGE_MISMATCH",
+            "semantic",
+            "warning",
+            "Semantic metadata coverage differs or is incomplete.",
+        )
+
+    configuration_limited = (
+        policy_state != "match"
+        or detector_state != "match"
+        or presidio_state in {"mismatch", "unknown", "missing"}
+        or semantic_state not in {"match", "not_applicable"}
+        or not semantic_coverage_compatible
+    )
+    status = "limited" if configuration_limited else "comparable_with_limitations"
+    disposition_status = "limited" if configuration_limited else "comparable"
     warnings = [
-        "Audit reports do not record policy-content or detector-configuration fingerprints; "
-        "observed differences cannot be attributed solely to Agent behavior.",
         "Paths and source types are represented only by SHA-256 references; no input path, "
         "matched value, raw trace text, policy rule text, or semantic rationale is copied.",
         "New Exposure means newly observed in these reports, not a confirmed new PHI leak.",
         "No Longer Observed does not prove that a risk was eliminated.",
+        "Configuration evidence can support comparability but cannot attribute an observed change solely to Agent behavior.",
     ]
-    status = "comparable_with_limitations"
-    if not policy_match:
-        status = "limited"
+    if policy_state == "mismatch" and not policy_reference_match:
         warnings.append(
             "Policy references differ. Disposition changes may come from policy selection rather "
             "than an Agent exposure-path change."
         )
-    if not semantic_coverage_compatible:
-        status = "limited"
-        warnings.append(
-            "Semantic metadata coverage differs or is incomplete, so semantic outcomes are not "
-            "directly comparable. Semantic fields are excluded from this diff."
-        )
-    else:
-        warnings.append(
-            "Semantic fields are intentionally excluded and audit reports do not identify the "
-            "resolver configuration; this comparison does not rerun or replace the Semantic Context Gate."
-        )
+    warnings.extend(item["message"] for item in diagnostics if item["severity"] == "warning")
     return {
         "status": status,
-        "policy_reference_match": policy_match,
+        "reason_codes": reason_codes,
+        "diagnostics": diagnostics,
+        "structural": {
+            "status": "comparable",
+            "route_key_compatible": True,
+            "observation_basis": "limited" if detector_state != "match" or presidio_state != "match" else "comparable",
+        },
+        "disposition": {
+            "status": disposition_status,
+            "policy_fingerprint_comparison": policy_state,
+            "configuration_basis": "limited" if configuration_limited else "comparable",
+        },
+        "provenance_complete": provenance_complete,
+        "policy_reference_match": policy_reference_match,
         "policy_reference": {
             "before": _field_ref(before["policy_path"]),
             "after": _field_ref(after["policy_path"]),
         },
-        "detector_configuration": "not_recorded_in_audit_report",
+        "policy_fingerprint_comparison": policy_state,
+        "detector_configuration": detector_state,
+        "presidio_configuration": presidio_state,
         "semantic": {
             "before_coverage": before_semantic,
             "after_coverage": after_semantic,
             "coverage_compatible": semantic_coverage_compatible,
             "directly_comparable": False,
+            "configuration_comparison": semantic_state,
             "included_in_exposure_key": False,
         },
         "warnings": warnings,
     }
+
+
+def _fingerprint_comparison(
+    before_context: dict[str, Any] | None,
+    after_context: dict[str, Any] | None,
+    field: str,
+) -> str:
+    if before_context is None or after_context is None:
+        return "missing"
+    return "match" if before_context[field] == after_context[field] else "mismatch"
+
+
+def _presidio_comparison(
+    before_context: dict[str, Any] | None,
+    after_context: dict[str, Any] | None,
+) -> str:
+    if before_context is None or after_context is None:
+        return "missing"
+    if before_context["presidio_enabled"] != after_context["presidio_enabled"]:
+        return "mismatch"
+    if before_context["presidio_enabled"]:
+        return "unknown"
+    return "match"
+
+
+def _semantic_configuration_comparison(
+    before_context: dict[str, Any] | None,
+    after_context: dict[str, Any] | None,
+) -> str:
+    if before_context is None or after_context is None:
+        return "missing"
+    if before_context["semantic_enabled"] != after_context["semantic_enabled"]:
+        return "mismatch"
+    if not before_context["semantic_enabled"]:
+        return "match"
+    before_fingerprint = before_context["semantic_resolver_fingerprint"]
+    after_fingerprint = after_context["semantic_resolver_fingerprint"]
+    if before_fingerprint is None or after_fingerprint is None:
+        return "unknown"
+    return "match" if before_fingerprint == after_fingerprint else "mismatch"
 
 
 def _semantic_coverage(findings: list[dict[str, Any]]) -> str:
@@ -434,6 +661,16 @@ def _report_identity(report: dict[str, Any]) -> dict[str, Any]:
 
 def _sum_frequency(groups: dict[str, dict[str, Any]], field: str) -> int:
     return sum(group["frequency"][field] for group in groups.values())
+
+
+def _disposition_direction(before_group: dict[str, Any], after_group: dict[str, Any]) -> str:
+    before_rank = DISPOSITION_RANK[before_group["worst_disposition"]]
+    after_rank = DISPOSITION_RANK[after_group["worst_disposition"]]
+    if after_rank > before_rank:
+        return "worsened"
+    if after_rank < before_rank:
+        return "improved"
+    return "mixed_or_other"
 
 
 def _field_ref(value: str | None) -> str | None:
@@ -490,18 +727,19 @@ def _append_disposition_section(lines: list[str], changes: list[dict[str, Any]])
         return
     lines.extend(
         [
-            "| Exposure Key | Category | Before | After |",
-            "| --- | --- | --- | --- |",
+            "| Exposure Key | Category | Before | After | Direction |",
+            "| --- | --- | --- | --- | --- |",
         ]
     )
     for change in changes:
         exposure = change["exposure"]
         lines.append(
-            "| `{key}` | {category} | {before} | {after} |".format(
+            "| `{key}` | {category} | {before} | {after} | {direction} |".format(
                 key=exposure["exposure_key"],
                 category=exposure["category"],
                 before=change["before"]["worst_disposition"],
                 after=change["after"]["worst_disposition"],
+                direction=change["direction"],
             )
         )
     _append_route_references(lines, [change["exposure"] for change in changes])

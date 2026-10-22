@@ -1,7 +1,7 @@
 <h1 align="center">PHI Boundary Gate</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/release-v0.8.0-brightgreen.svg" alt="release v0.8.0" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
+  <img src="https://img.shields.io/badge/release-v0.8.1-brightgreen.svg" alt="release v0.8.1" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
 </p>
 
 **PHI Boundary Gate** detects, gates, redacts, and reports PHI candidate
@@ -21,7 +21,7 @@ calls when the configured PHI and compliance policy says the route is not allowe
 | | |
 |---|---|
 | **Boundary-first reports** | Groups repeated PHI candidates across trace events so you can see the path, not only the match. |
-| **Exposure change analysis** | Compares two JSON audit reports to show newly observed, absent, disposition-changed, and frequency-changed structural routes. |
+| **Exposure change analysis** | Compares two JSON audit reports with configuration provenance, comparability diagnostics, and observed risk direction. |
 | **Path-aware audit schema** | Report schema v3 records JSON content paths and external adapter paths for structured payloads. |
 | **Hybrid candidate detection** | Built-in regex rules cover common synthetic PHI variants; optional local Presidio detection can add NER-backed spans. |
 | **Semantic context gate** | An optional provider-neutral resolver classifies who a candidate represents, what information it is linked to, and its semantic PHI disposition. |
@@ -179,8 +179,12 @@ phi-boundary-gate compare-reports \
 The comparison expands multiple destinations, ignores event IDs, timestamps,
 matched values, and input order, and uses an exact structural route key. Paths
 and source types are emitted only as SHA-256 references, so the Diff does not
-copy raw PHI or arbitrary input fields. Policy and detector fingerprints are not
-present in audit schema v3, so the output clearly reports comparability limits.
+copy raw PHI or arbitrary input fields. New v0.8.1 reports carry optional
+schema-v3 `audit_context` fingerprints for the effective policy and detector
+configuration. The Diff distinguishes route structure from disposition
+comparability, detects configuration drift, and labels changed dispositions as
+worsened, improved, or mixed/other. v0.8.0 reports remain accepted and are
+marked as having incomplete provenance.
 See [Exposure Diff](docs/exposure-diff.md) for a complete synthetic scan-to-diff
 example and the versioned JSON contract.
 
@@ -541,7 +545,7 @@ Run the tests:
 PYTHONPATH=src python3 -m unittest discover -s tests
 ```
 
-Current release: `v0.8.0`.
+Current release: `v0.8.1`.
 
 ## Limits
 

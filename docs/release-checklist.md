@@ -19,6 +19,27 @@ Configure PyPI Trusted Publishing before the first release:
 
 Trusted Publishing avoids long-lived PyPI API tokens in GitHub Secrets.
 
+## v0.8.1
+
+Trustworthy Exposure Diff and its release metadata ship together in one feature
+PR. Before merging, run the full validation suite documented below, including
+the synthetic scan-to-diff smoke in `docs/exposure-diff.md`, wheel installation,
+and the version guard against `origin/main`.
+
+After the PR is merged, required main checks pass, and the main publish workflow
+has published and verified v0.8.1 on TestPyPI, tag the merged main commit only:
+
+```bash
+git switch main
+git pull --ff-only origin main
+git tag -a v0.8.1 -m "v0.8.1: Trustworthy Exposure Diff"
+git push origin v0.8.1
+```
+
+The tag workflow publishes to PyPI through Trusted Publishing. Confirm the tag
+does not already exist, do not publish manually, and create GitHub Release
+`v0.8.1 — Trustworthy Exposure Diff` only after the tag workflow succeeds.
+
 ## v0.8.0
 
 The Exposure Diff feature and release metadata are prepared together for v0.8.0.
