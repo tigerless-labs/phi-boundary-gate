@@ -1,6 +1,6 @@
 """PHI boundary gating, redaction, and audit reporting."""
 
-__version__ = "0.8.1"
+__version__ = "0.8.2"
 
 from .adapters import (
     TraceAdapter,
@@ -17,12 +17,15 @@ from .audit import AuditResult, audit_events, audit_trace
 from .external_audit import audit_external_trace
 from .exposure_diff import (
     ExposureDiffResult,
+    build_review_guidance,
     compare_audit_reports,
     compare_report_files,
     load_audit_report,
     render_exposure_diff_markdown,
+    render_exposure_review_summary,
     write_exposure_diff_json,
     write_exposure_diff_markdown,
+    write_exposure_review_summary,
 )
 from .compliance import (
     ComplianceContext,
@@ -83,6 +86,7 @@ __all__ = [
     "audit_trace",
     "compare_audit_reports",
     "compare_report_files",
+    "build_review_guidance",
     "build_conversion_diagnostics",
     "build_report",
     "check_project_config",
@@ -101,11 +105,13 @@ __all__ = [
     "redacted_trace_events",
     "render_markdown",
     "render_exposure_diff_markdown",
+    "render_exposure_review_summary",
     "scan_text",
     "validate_trace_mapping",
     "write_conversion_diagnostics",
     "write_exposure_diff_json",
     "write_exposure_diff_markdown",
+    "write_exposure_review_summary",
     "write_json_report",
     "write_markdown_report",
     "write_converted_trace",

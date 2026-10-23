@@ -167,11 +167,19 @@ from phi_boundary_gate import compare_report_files
 diff = compare_report_files("baseline-report.json", "candidate-report.json")
 diff.write_markdown("exposure-diff.md")
 diff.write_json("exposure-diff.json")
+diff.write_review_summary("review-summary.md")
+
+# Fixed-code, fixed-text guidance for custom integrations.
+for item in diff.review_guidance():
+    print(item["code"], item["message"])
 ```
 
 The result is advisory and uses the same validated, PHI-safe contract as
 `compare-reports`. See [Exposure Diff](exposure-diff.md) for canonical key and
 comparability details.
+The Review Summary is aggregate, bounded, advisory, and non-blocking. It does
+not modify the Diff JSON contract or establish PHI leakage, causal attribution,
+HIPAA noncompliance, or risk elimination.
 
 ## Stable Exceptions
 

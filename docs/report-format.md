@@ -5,6 +5,11 @@ The CLI writes both Markdown and JSON reports.
 The separate Exposure Diff contract compares two JSON audit reports without changing this
 schema. See [Exposure Diff](exposure-diff.md).
 
+The optional v0.8.2 Exposure Regression Review is a separate Markdown rendering
+derived from the Diff result. It does not add fields to Audit Report schema v3
+or Diff schema v1. It contains only aggregate counts and fixed guidance text,
+remains advisory/non-blocking, and is not a HIPAA compliance certification.
+
 ## JSON Report
 
 Top-level fields:

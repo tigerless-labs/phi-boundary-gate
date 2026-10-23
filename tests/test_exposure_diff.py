@@ -10,7 +10,13 @@ from dataclasses import replace
 from pathlib import Path
 
 from phi_boundary_gate.cli import main
-from phi_boundary_gate.exposure_diff import compare_audit_reports, compare_report_files
+from phi_boundary_gate.exposure_diff import (
+    MAX_REVIEW_GUIDANCE_ITEMS,
+    build_review_guidance,
+    compare_audit_reports,
+    compare_report_files,
+    render_exposure_review_summary,
+)
 from phi_boundary_gate.policy import Policy, load_policy
 from phi_boundary_gate.report import build_report
 from phi_boundary_gate.semantic import NoopSemanticResolver
@@ -436,8 +442,210 @@ class ExposureDiffTest(unittest.TestCase):
             self.assertEqual(first, second)
             self.assertEqual(code, 0)
             self.assertIn("new=1", stdout.getvalue())
+            self.assertNotIn("regression review summary", stdout.getvalue())
             self.assertEqual(json.loads((root / "diff.json").read_text()), first)
             self.assertIn("This is advisory", (root / "diff.md").read_text())
+            self.assertFalse((root / "review-summary.md").exists())
+
+    def test_review_summary_prioritizes_changes_without_changing_diff_schema(self) -> None:
+        before = report(
+            [
+                event(
+                    "evt-before",
+                    {
+                        "member_id": "member_id=MBR-SYN-10001",
+                        "claim_id": "claim_id=CLM-SYN-10001",
+                    },
+                )
+            ]
+        )
+        after = report(
+            [
+                event(
+                    "evt-after",
+                    {
+                        "member_id": "member_id=MBR-SYN-20002",
+                        "mrn": "MRN: A-20002",
+                    },
+                )
+            ],
+            policy=policy_with_member_denied_in_tool_output(),
+        )
+
+        result = compare_audit_reports(before, after)
+        diff = result.to_dict()
+        review = result.to_review_summary()
+        guidance = result.review_guidance()
+
+        self.assertEqual(diff["summary"]["new_exposures"], 1)
+        self.assertEqual(diff["summary"]["no_longer_observed"], 1)
+        self.assertEqual(diff["summary"]["disposition_directions"]["worsened"], 1)
+        self.assertNotIn("review_guidance", diff)
+        self.assertIn("Newly observed routes: 1", review)
+        self.assertIn("No longer observed routes: 1", review)
+        self.assertIn("Worsened dispositions: 1", review)
+        self.assertIn("`REVIEW_WORSENED_DISPOSITIONS`", review)
+        self.assertIn("`REVIEW_NEWLY_OBSERVED_ROUTES`", review)
+        self.assertIn("`VALIDATE_POLICY_COMPARABILITY`", review)
+        self.assertEqual(guidance, build_review_guidance(diff))
+        self.assertEqual(review, render_exposure_review_summary(diff))
+
+    def test_review_summary_reports_improvement_without_claiming_risk_reduction(self) -> None:
+        events = [event("evt-1", {"member_id": "member_id=MBR-SYN-10001"})]
+        before = report(events, policy=policy_with_member_denied_in_tool_output())
+        after = report(events)
+
+        review = compare_audit_reports(before, after).to_review_summary()
+
+        self.assertIn("Improved dispositions: 1", review)
+        self.assertIn("`REVIEW_IMPROVED_DISPOSITIONS`", review)
+        self.assertIn("without treating them as proof", review)
+
+    def test_review_guidance_covers_detector_and_semantic_uncertainty(self) -> None:
+        policy = load_policy(POLICY_PATH)
+        baseline = build_report([], policy, Path("trace.jsonl"), Path("policy.yml"))
+        changed = build_report(
+            [],
+            policy,
+            Path("trace.jsonl"),
+            Path("policy.yml"),
+            enable_presidio=True,
+            semantic_resolver=NoopSemanticResolver(),
+        )
+
+        guidance = compare_audit_reports(baseline, changed).review_guidance()
+        codes = [item["code"] for item in guidance]
+
+        self.assertIn("VALIDATE_DETECTOR_COMPARABILITY", codes)
+        self.assertIn("VALIDATE_SEMANTIC_COMPARABILITY", codes)
+
+    def test_review_summary_handles_legacy_provenance_and_empty_reports(self) -> None:
+        before = report([])
+        after = copy.deepcopy(before)
+        before.pop("audit_context")
+        after.pop("audit_context")
+
+        result = compare_audit_reports(before, after)
+        review = result.to_review_summary()
+        codes = [item["code"] for item in result.review_guidance()]
+
+        self.assertIn("Configuration evidence is incomplete", review)
+        self.assertIn("VALIDATE_POLICY_COMPARABILITY", codes)
+        self.assertIn("VALIDATE_DETECTOR_COMPARABILITY", codes)
+        self.assertIn("VALIDATE_SEMANTIC_COMPARABILITY", codes)
+        self.assertIn("Newly observed routes: 0", review)
+
+    def test_review_summary_is_bounded_deterministic_and_omits_input_data(self) -> None:
+        sensitive_name = "Casey Example"
+        sensitive_path = "records.casey-example.private"
+        after_events = [
+            event(
+                f"evt-{index}",
+                {f"private-{index}": f"member_id=MBR-SYN-{10000 + index}"},
+                source_type=sensitive_name,
+                source_path=sensitive_path,
+                destinations=[{"layer": "model_input", "path": f"prompt.{sensitive_name}.{index}"}],
+            )
+            for index in range(40)
+        ]
+        after = report(after_events)
+        for finding in after["findings"]:
+            finding["reason"] = "private detector explanation"
+            finding["policy"]["reason"] = "private policy explanation"
+        result = compare_audit_reports(report([]), after)
+
+        first = result.to_review_summary()
+        second = result.to_review_summary()
+
+        self.assertEqual(first, second)
+        self.assertIn("Newly observed routes: 40", first)
+        self.assertLessEqual(len(result.review_guidance()), MAX_REVIEW_GUIDANCE_ITEMS)
+        self.assertNotIn(sensitive_name, first)
+        self.assertNotIn(sensitive_path, first)
+        self.assertNotIn("MBR-SYN", first)
+        self.assertNotIn("sha256:", first)
+        self.assertNotIn("private detector explanation", first)
+        self.assertNotIn("private policy explanation", first)
+
+        all_categories = copy.deepcopy(result.to_dict())
+        all_categories["summary"]["no_longer_observed"] = 1
+        all_categories["summary"]["changed_frequencies"] = 1
+        all_categories["summary"]["disposition_directions"] = {
+            "worsened": 1,
+            "improved": 1,
+            "mixed_or_other": 1,
+        }
+        all_categories["comparability"]["reason_codes"] = [
+            "POLICY_FINGERPRINT_MISMATCH",
+            "DETECTOR_FINGERPRINT_MISMATCH",
+            "SEMANTIC_CONFIGURATION_MISMATCH",
+        ]
+        bounded = render_exposure_review_summary(all_categories)
+        self.assertEqual(len(build_review_guidance(all_categories)), MAX_REVIEW_GUIDANCE_ITEMS)
+        self.assertIn("Additional guidance categories omitted: 3", bounded)
+
+    def test_cli_review_summary_matches_sdk_and_risk_changes_exit_zero(self) -> None:
+        events = [event("evt-1", {"member_id": "member_id=MBR-SYN-10001"})]
+        before = report(events)
+        after = report(events, policy=policy_with_member_denied_in_tool_output())
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            before_path = root / "before.json"
+            after_path = root / "after.json"
+            review_path = root / "review-summary.md"
+            before_path.write_text(json.dumps(before), encoding="utf-8")
+            after_path.write_text(json.dumps(after), encoding="utf-8")
+
+            expected = compare_report_files(before_path, after_path).to_review_summary()
+            code = main(
+                [
+                    "compare-reports",
+                    "--before",
+                    str(before_path),
+                    "--after",
+                    str(after_path),
+                    "--out",
+                    str(root / "diff.md"),
+                    "--json",
+                    str(root / "diff.json"),
+                    "--review-summary",
+                    str(review_path),
+                ]
+            )
+
+            self.assertEqual(code, 0)
+            self.assertEqual(review_path.read_text(), expected)
+
+    def test_cli_review_summary_write_error_uses_existing_error_exit_code(self) -> None:
+        valid = report([])
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            before_path = root / "before.json"
+            after_path = root / "after.json"
+            unwritable_target = root / "summary-directory"
+            before_path.write_text(json.dumps(valid), encoding="utf-8")
+            after_path.write_text(json.dumps(valid), encoding="utf-8")
+            unwritable_target.mkdir()
+            stderr = io.StringIO()
+            with contextlib.redirect_stderr(stderr):
+                code = main(
+                    [
+                        "compare-reports",
+                        "--before",
+                        str(before_path),
+                        "--after",
+                        str(after_path),
+                        "--out",
+                        str(root / "diff.md"),
+                        "--json",
+                        str(root / "diff.json"),
+                        "--review-summary",
+                        str(unwritable_target),
+                    ]
+                )
+
+            self.assertEqual(code, 2)
+            self.assertIn("error:", stderr.getvalue())
 
     def test_cli_invalid_json_returns_existing_validation_exit_code_without_outputs(self) -> None:
         valid = report([])
