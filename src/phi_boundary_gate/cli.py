@@ -74,6 +74,11 @@ def main(argv: list[str] | None = None) -> int:
     compare_parser.add_argument("--after", required=True, type=Path, help="Candidate JSON audit report.")
     compare_parser.add_argument("--out", required=True, type=Path, help="Path for the Markdown diff.")
     compare_parser.add_argument("--json", required=True, type=Path, dest="json_out", help="Path for the JSON diff.")
+    compare_parser.add_argument(
+        "--review-summary",
+        type=Path,
+        help="Optional path for a concise advisory Markdown review summary.",
+    )
 
     mapping_parser = subparsers.add_parser("validate-mapping", help="Validate a mapping v1 YAML file.")
     mapping_parser.add_argument("--mapping", required=True, type=Path, help="Path to a mapping v1 YAML file.")
@@ -256,6 +261,8 @@ def _compare_reports(args: argparse.Namespace) -> int:
         result = compare_report_files(args.before, args.after)
         result.write_markdown(args.out)
         result.write_json(args.json_out)
+        if args.review_summary:
+            result.write_review_summary(args.review_summary)
     except (OSError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
@@ -273,6 +280,8 @@ def _compare_reports(args: argparse.Namespace) -> int:
             frequency=summary["changed_frequencies"],
         )
     )
+    if args.review_summary:
+        print(f"Wrote advisory regression review summary: {args.review_summary}")
     return 0
 
 

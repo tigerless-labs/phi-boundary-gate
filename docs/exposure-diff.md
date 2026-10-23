@@ -30,9 +30,11 @@ PYTHONPATH=src python3 -m phi_boundary_gate.cli compare-reports \
   --before /tmp/phi-exposure-diff/before.json \
   --after /tmp/phi-exposure-diff/after.json \
   --out /tmp/phi-exposure-diff/diff.md \
-  --json /tmp/phi-exposure-diff/diff.json
+  --json /tmp/phi-exposure-diff/diff.json \
+  --review-summary /tmp/phi-exposure-diff/review-summary.md
 
 sed -n '1,220p' /tmp/phi-exposure-diff/diff.md
+cat /tmp/phi-exposure-diff/review-summary.md
 python3 -m json.tool /tmp/phi-exposure-diff/diff.json
 ```
 
@@ -41,6 +43,41 @@ route, and a frequency and policy-disposition change for the existing `member_id
 The normalized policy fingerprints differ, so the result is explicitly `limited`: the
 disposition change may be configuration-driven and must not be attributed solely to Agent
 behavior.
+
+## Advisory regression review summary
+
+`--review-summary` is optional. When provided, it writes a separate, concise
+Markdown artifact suitable for a GitHub Actions Job Summary or a human PR
+review. Omitting the option preserves the existing CLI behavior and creates no
+additional file.
+
+The summary reuses the existing Diff result. It includes aggregate counts from
+`summary`, comparability status, and at most six prioritized guidance entries.
+Guidance uses fixed machine-readable codes and fixed text; it never includes
+exposure keys, path references, raw paths, trace content, matched values, or
+free-form detector, policy, or resolver reasons. The stable priorities are:
+
+- review worsened dispositions and newly observed routes;
+- validate policy, detector, or semantic comparability when evidence differs,
+  is missing, or is unknown;
+- verify no-longer-observed routes independently;
+- review improved, mixed, or frequency changes without inferring causality.
+
+Frequency changes are not automatically classified as risk worsening.
+No-longer-observed routes are not classified as eliminated risks. Configuration
+uncertainty is retained, and guidance cannot override Guard, policy, compliance,
+or CI decisions.
+
+To append the file manually in a GitHub Actions step:
+
+```bash
+cat /tmp/phi-exposure-diff/review-summary.md >> "$GITHUB_STEP_SUMMARY"
+```
+
+The CLI does not inspect a repository, call the GitHub API, create checks or
+comments, read secrets, or modify workflows. A valid Diff returns `0` even when
+the summary reports new routes, worsened dispositions, or configuration drift.
+The summary is advisory and is not a HIPAA compliance certification.
 
 ## Canonical exposure key
 

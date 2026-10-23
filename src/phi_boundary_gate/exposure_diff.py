@@ -17,6 +17,64 @@ DIFF_SCHEMA_VERSION = 1
 EXPOSURE_KEY_VERSION = 1
 KNOWN_CATEGORIES = frozenset(rule.category for rule in RULES)
 KNOWN_DISPOSITIONS = frozenset(DISPOSITION_RANK)
+MAX_REVIEW_GUIDANCE_ITEMS = 6
+
+_GUIDANCE_MESSAGES = {
+    "REVIEW_NEWLY_OBSERVED_ROUTES": (
+        "Review newly observed route boundaries and confirm the observation scope."
+    ),
+    "REVIEW_WORSENED_DISPOSITIONS": (
+        "Inspect worsened dispositions together with the effective policy and route context."
+    ),
+    "VALIDATE_POLICY_COMPARABILITY": (
+        "Compare effective policy configuration before attributing disposition changes."
+    ),
+    "VALIDATE_DETECTOR_COMPARABILITY": (
+        "Compare detector settings before attributing changes in observed routes."
+    ),
+    "VALIDATE_SEMANTIC_COMPARABILITY": (
+        "Validate Semantic Resolver provenance and coverage before comparing semantic evidence."
+    ),
+    "VERIFY_NO_LONGER_OBSERVED": (
+        "Verify no-longer-observed routes independently; absence here does not prove elimination."
+    ),
+    "REVIEW_IMPROVED_DISPOSITIONS": (
+        "Review improved dispositions without treating them as proof of reduced real-world risk."
+    ),
+    "REVIEW_MIXED_DISPOSITIONS": (
+        "Inspect mixed disposition-set changes; the highest recorded level did not establish a direction."
+    ),
+    "REVIEW_FREQUENCY_CONTEXT": (
+        "Check collection scope for frequency changes; frequency alone does not establish worsening."
+    ),
+    "NO_PRIORITIZED_CHANGES": "No prioritized regression changes were observed in this comparison.",
+}
+
+_POLICY_LIMITATION_CODES = frozenset(
+    {
+        "AUDIT_PROVENANCE_INCOMPLETE",
+        "POLICY_FINGERPRINT_MISMATCH",
+        "POLICY_FINGERPRINT_MISSING",
+    }
+)
+_DETECTOR_LIMITATION_CODES = frozenset(
+    {
+        "AUDIT_PROVENANCE_INCOMPLETE",
+        "DETECTOR_FINGERPRINT_MISMATCH",
+        "DETECTOR_FINGERPRINT_MISSING",
+        "PRESIDIO_ENABLEMENT_MISMATCH",
+        "PRESIDIO_CONFIGURATION_UNKNOWN",
+    }
+)
+_SEMANTIC_LIMITATION_CODES = frozenset(
+    {
+        "AUDIT_PROVENANCE_INCOMPLETE",
+        "SEMANTIC_CONFIGURATION_MISMATCH",
+        "SEMANTIC_CONFIGURATION_UNKNOWN",
+        "SEMANTIC_CONFIGURATION_MISSING",
+        "SEMANTIC_COVERAGE_MISMATCH",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -31,11 +89,20 @@ class ExposureDiffResult:
     def to_markdown(self) -> str:
         return render_exposure_diff_markdown(self.report)
 
+    def to_review_summary(self) -> str:
+        return render_exposure_review_summary(self.report)
+
+    def review_guidance(self) -> list[dict[str, str]]:
+        return build_review_guidance(self.report)
+
     def write_json(self, path: Path | str) -> None:
         write_exposure_diff_json(self.report, Path(path))
 
     def write_markdown(self, path: Path | str) -> None:
         write_exposure_diff_markdown(self.report, Path(path))
+
+    def write_review_summary(self, path: Path | str) -> None:
+        write_exposure_review_summary(self.report, Path(path))
 
 
 def load_audit_report(path: Path | str, *, label: str = "report") -> dict[str, Any]:
@@ -153,6 +220,83 @@ def write_exposure_diff_markdown(report: dict[str, Any], path: Path) -> None:
     path.write_text(render_exposure_diff_markdown(report), encoding="utf-8")
 
 
+def write_exposure_review_summary(report: dict[str, Any], path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(render_exposure_review_summary(report), encoding="utf-8")
+
+
+def build_review_guidance(
+    report: dict[str, Any],
+    *,
+    max_items: int = MAX_REVIEW_GUIDANCE_ITEMS,
+) -> list[dict[str, str]]:
+    """Return prioritized, bounded guidance containing only fixed safe text."""
+
+    if max_items < 1:
+        raise ValueError("max_items must be at least 1")
+    candidates = _review_guidance_candidates(report)
+    return candidates[:max_items]
+
+
+def render_exposure_review_summary(report: dict[str, Any]) -> str:
+    """Render a bounded, PHI-safe review summary without route-level input data."""
+
+    summary = report["summary"]
+    comparability = report["comparability"]
+    directions = summary["disposition_directions"]
+    guidance_candidates = _review_guidance_candidates(report)
+    guidance = guidance_candidates[:MAX_REVIEW_GUIDANCE_ITEMS]
+    omitted_guidance = len(guidance_candidates) - len(guidance)
+    comparability_label = (
+        "Limited by configuration evidence"
+        if comparability["status"] == "limited"
+        else "Comparable with documented limitations"
+    )
+    evidence_label = (
+        "Configuration evidence is incomplete or differs between reports."
+        if comparability["status"] == "limited"
+        else "Recorded policy and detector evidence is comparable; semantic evidence remains excluded from route keys."
+    )
+    lines = [
+        "# PHI Exposure Regression Review",
+        "",
+        "**Status: Advisory / Non-blocking**",
+        "",
+        "## Comparability",
+        "",
+        f"- Configuration comparison: {comparability_label}.",
+        f"- Limitations: {evidence_label}",
+        "",
+        "## Observed Changes",
+        "",
+        f"- Newly observed routes: {summary['new_exposures']}",
+        f"- No longer observed routes: {summary['no_longer_observed']}",
+        f"- Worsened dispositions: {directions['worsened']}",
+        f"- Improved dispositions: {directions['improved']}",
+        f"- Mixed or other disposition changes: {directions['mixed_or_other']}",
+        f"- Frequency changes: {summary['changed_frequencies']}",
+        "",
+        "## Suggested Review",
+        "",
+    ]
+    lines.extend(f"- `{item['code']}` — {item['message']}" for item in guidance)
+    if omitted_guidance:
+        lines.append(f"- Additional guidance categories omitted: {omitted_guidance}")
+    lines.extend(
+        [
+            "",
+            "## Limitations",
+            "",
+            "Observed differences identify PHI candidate evidence in two reports. They do not independently prove "
+            "PHI leakage, causal attribution, risk elimination, or HIPAA noncompliance.",
+            "",
+            "This summary cannot override Guard, policy, compliance, or CI decisions.",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
 def render_exposure_diff_markdown(report: dict[str, Any]) -> str:
     summary = report["summary"]
     comparability = report["comparability"]
@@ -222,6 +366,36 @@ def render_exposure_diff_markdown(report: dict[str, Any]) -> str:
         ]
     )
     return "\n".join(lines)
+
+
+def _review_guidance_candidates(report: dict[str, Any]) -> list[dict[str, str]]:
+    summary = report["summary"]
+    directions = summary["disposition_directions"]
+    reason_codes = frozenset(report["comparability"]["reason_codes"])
+    codes: list[str] = []
+
+    if directions["worsened"]:
+        codes.append("REVIEW_WORSENED_DISPOSITIONS")
+    if summary["new_exposures"]:
+        codes.append("REVIEW_NEWLY_OBSERVED_ROUTES")
+    if reason_codes & _POLICY_LIMITATION_CODES:
+        codes.append("VALIDATE_POLICY_COMPARABILITY")
+    if reason_codes & _DETECTOR_LIMITATION_CODES:
+        codes.append("VALIDATE_DETECTOR_COMPARABILITY")
+    if reason_codes & _SEMANTIC_LIMITATION_CODES:
+        codes.append("VALIDATE_SEMANTIC_COMPARABILITY")
+    if summary["no_longer_observed"]:
+        codes.append("VERIFY_NO_LONGER_OBSERVED")
+    if directions["improved"]:
+        codes.append("REVIEW_IMPROVED_DISPOSITIONS")
+    if directions["mixed_or_other"]:
+        codes.append("REVIEW_MIXED_DISPOSITIONS")
+    if summary["changed_frequencies"]:
+        codes.append("REVIEW_FREQUENCY_CONTEXT")
+    if not codes:
+        codes.append("NO_PRIORITIZED_CHANGES")
+
+    return [{"code": code, "message": _GUIDANCE_MESSAGES[code]} for code in codes]
 
 
 def _validate_report(report: Any, label: str) -> None:

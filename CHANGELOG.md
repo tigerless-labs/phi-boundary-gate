@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.8.2
+
+- Added an optional, bounded Markdown Exposure Regression Review for GitHub Job
+  Summary and PR review workflows.
+- Added fixed machine-readable guidance codes for newly observed routes,
+  disposition direction, and policy, detector, or semantic comparability limits.
+- Added `--review-summary` to `compare-reports` plus matching
+  `ExposureDiffResult` SDK helpers; the existing Diff JSON and Markdown remain
+  unchanged when the option is omitted.
+- Kept all observed changes advisory and non-blocking. Frequency changes do not
+  imply worsening, no-longer-observed routes do not prove elimination, and the
+  summary cannot override Guard, compliance, policy, or CI decisions.
+
 ## 0.8.1
 
 - Added optional Audit Report Schema v3 `audit_context` provenance with stable

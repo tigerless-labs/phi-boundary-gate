@@ -19,6 +19,31 @@ Configure PyPI Trusted Publishing before the first release:
 
 Trusted Publishing avoids long-lived PyPI API tokens in GitHub Secrets.
 
+## v0.8.2
+
+Advisory Regression Insights ships as one feature PR without changing existing
+CI workflow conditions, Diff schema v1, Audit Report schema v3, Guard behavior,
+or default `compare-reports` output. Before merging, run the full validation
+suite, the trace corpus golden diff, package smoke, and both CLI/SDK Review
+Summary smoke paths.
+
+Only after required PR checks pass, merge to `main`, confirm main CI succeeds,
+and verify the main workflow's TestPyPI publication/install. Then tag the merged
+main commit only:
+
+```bash
+git switch main
+git pull --ff-only origin main
+git tag -a v0.8.2 -m "v0.8.2: Advisory Regression Insights"
+git push origin v0.8.2
+```
+
+The tag workflow publishes to PyPI through Trusted Publishing. Confirm the tag
+and package version do not already exist, do not publish manually, and create
+GitHub Release `v0.8.2 — Advisory Regression Insights` only after the tag
+workflow succeeds. The optional Review Summary remains advisory; it is not a
+Required Check or a HIPAA compliance certification.
+
 ## v0.8.1
 
 Trustworthy Exposure Diff and its release metadata ship together in one feature

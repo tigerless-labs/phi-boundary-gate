@@ -1,7 +1,7 @@
 <h1 align="center">PHI Boundary Gate</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/release-v0.8.1-brightgreen.svg" alt="release v0.8.1" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
+  <img src="https://img.shields.io/badge/release-v0.8.2-brightgreen.svg" alt="release v0.8.2" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
 </p>
 
 **PHI Boundary Gate** detects, gates, redacts, and reports PHI candidate
@@ -173,7 +173,11 @@ phi-boundary-gate compare-reports \
   --before baseline-report.json \
   --after candidate-report.json \
   --out exposure-diff.md \
-  --json exposure-diff.json
+  --json exposure-diff.json \
+  --review-summary review-summary.md
+
+# Optional GitHub Actions integration; the CLI never writes this automatically.
+cat review-summary.md >> "$GITHUB_STEP_SUMMARY"
 ```
 
 The comparison expands multiple destinations, ignores event IDs, timestamps,
@@ -185,6 +189,10 @@ configuration. The Diff distinguishes route structure from disposition
 comparability, detects configuration drift, and labels changed dispositions as
 worsened, improved, or mixed/other. v0.8.0 reports remain accepted and are
 marked as having incomplete provenance.
+The optional v0.8.2 Review Summary adds bounded, fixed-template guidance codes
+for newly observed routes, disposition direction, and configuration uncertainty.
+It contains aggregate counts only, is advisory/non-blocking, and does not change
+the Diff JSON or default Markdown output.
 See [Exposure Diff](docs/exposure-diff.md) for a complete synthetic scan-to-diff
 example and the versioned JSON contract.
 
@@ -545,7 +553,7 @@ Run the tests:
 PYTHONPATH=src python3 -m unittest discover -s tests
 ```
 
-Current release: `v0.8.1`.
+Current release: `v0.8.2`.
 
 ## Limits
 
