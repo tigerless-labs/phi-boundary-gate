@@ -13,12 +13,24 @@ class ContentSegment:
 
 def content_segments(content: str) -> list[ContentSegment]:
     """Return scan-ready text segments with optional JSON leaf paths."""
-    parsed = _parse_json_container(content)
-    if parsed is None:
+    structured_segments = structured_content_segments(content)
+    if structured_segments is None:
         return [ContentSegment(path=None, text=content)]
 
-    segments = list(_leaf_segments(parsed, "$"))
-    return segments or [ContentSegment(path=None, text=content)]
+    return structured_segments or [ContentSegment(path=None, text=content)]
+
+
+def structured_content_segments(content: str) -> list[ContentSegment] | None:
+    """Return JSON scalar segments, or ``None`` when content is not a JSON container.
+
+    Unlike :func:`content_segments`, an empty object or array returns an empty
+    list. This lets coverage diagnostics distinguish structured content with no
+    scalar leaves without changing the established scanner fallback behavior.
+    """
+    parsed = _parse_json_container(content)
+    if parsed is None:
+        return None
+    return list(_leaf_segments(parsed, "$"))
 
 
 def _parse_json_container(content: str) -> Any | None:

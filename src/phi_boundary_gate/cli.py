@@ -13,12 +13,13 @@ from .adapters import (
     write_conversion_diagnostics,
     write_converted_trace,
 )
+from .coverage import build_audit_coverage
 from .exposure_diff import compare_report_files
 from .policy import load_policy
 from .project import check_project_config, init_project
 from .redacted_trace import write_redacted_trace
 from .report import REPORT_VALUE_MODES, build_report, write_json_report, write_markdown_report
-from .trace import TraceEvent, load_trace, trace_event_to_dict, write_trace
+from .trace import SUPPORTED_LAYERS, TraceEvent, load_trace, trace_event_to_dict, write_trace
 
 COMMANDS = {
     "compare-reports",
@@ -121,6 +122,7 @@ def _add_scan_trace_args(parser: argparse.ArgumentParser) -> None:
         action="store_true",
         help="Enable optional local Presidio PII detection in addition to built-in regex rules.",
     )
+    _add_coverage_args(parser)
 
 
 def _add_scan_external_trace_args(parser: argparse.ArgumentParser) -> None:
@@ -146,6 +148,27 @@ def _add_scan_external_trace_args(parser: argparse.ArgumentParser) -> None:
         "--enable-presidio",
         action="store_true",
         help="Enable optional local Presidio PII detection in addition to built-in regex rules.",
+    )
+    _add_coverage_args(parser)
+
+
+def _add_coverage_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--coverage-json",
+        type=Path,
+        help="Optional path for the advisory audit coverage JSON.",
+    )
+    parser.add_argument(
+        "--coverage-markdown",
+        type=Path,
+        help="Optional path for the advisory audit coverage Markdown.",
+    )
+    parser.add_argument(
+        "--expect-layer",
+        action="append",
+        choices=sorted(SUPPORTED_LAYERS),
+        default=[],
+        help="Expected trace layer; repeat to diagnose explicitly missing layers.",
     )
 
 
@@ -180,6 +203,9 @@ def _scan_trace_from_args(args: argparse.Namespace) -> int:
         json_out=args.json_out,
         redacted_trace_out=args.redacted_trace,
         enable_presidio=args.enable_presidio,
+        coverage_json_out=args.coverage_json,
+        coverage_markdown_out=args.coverage_markdown,
+        expected_layers=args.expect_layer,
     )
 
 
@@ -201,6 +227,8 @@ def _scan_external_trace(args: argparse.Namespace) -> int:
                 encoding="utf-8",
             )
 
+        mapping_diagnostics = adapter.coverage_diagnostics(events)
+
         report = build_report(
             events,
             policy,
@@ -221,6 +249,10 @@ def _scan_external_trace(args: argparse.Namespace) -> int:
         json_out=args.json_out,
         redacted_trace_out=args.redacted_trace,
         enable_presidio=args.enable_presidio,
+        coverage_json_out=args.coverage_json,
+        coverage_markdown_out=args.coverage_markdown,
+        expected_layers=args.expect_layer,
+        mapping_diagnostics=mapping_diagnostics,
     )
 
 
@@ -233,15 +265,30 @@ def _write_scan_outputs(
     json_out: Path,
     redacted_trace_out: Path | None,
     enable_presidio: bool,
+    coverage_json_out: Path | None,
+    coverage_markdown_out: Path | None,
+    expected_layers: list[str],
+    mapping_diagnostics: dict | None = None,
 ) -> int:
-    write_markdown_report(report, markdown_out)
-    write_json_report(report, json_out)
-    if redacted_trace_out:
-        try:
+    coverage = None
+    try:
+        write_markdown_report(report, markdown_out)
+        write_json_report(report, json_out)
+        if redacted_trace_out:
             write_redacted_trace(events, policy, redacted_trace_out, enable_presidio=enable_presidio)
-        except ValueError as exc:
-            print(f"error: {exc}", file=sys.stderr)
-            return 2
+        if coverage_json_out or coverage_markdown_out:
+            coverage = build_audit_coverage(
+                events,
+                expected_layers=expected_layers,
+                mapping_diagnostics=mapping_diagnostics,
+            )
+            if coverage_json_out:
+                coverage.write_json(coverage_json_out)
+            if coverage_markdown_out:
+                coverage.write_markdown(coverage_markdown_out)
+    except (OSError, ValueError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
 
     summary = report["summary"]
     redacted_note = f" and redacted trace {redacted_trace_out}" if redacted_trace_out else ""
@@ -253,6 +300,14 @@ def _write_scan_outputs(
             redacted=redacted_note,
         )
     )
+    if coverage is not None:
+        outputs = [str(path) for path in (coverage_json_out, coverage_markdown_out) if path is not None]
+        print(
+            "Wrote advisory audit coverage: {outputs}; warning(s)={warnings}".format(
+                outputs=" and ".join(outputs),
+                warnings=len(coverage.diagnostics),
+            )
+        )
     return 0
 
 

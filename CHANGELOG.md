@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.8.3
+
+- Added opt-in JSON and Markdown audit coverage summaries for normalized trace
+  events, observed layers, scannable segments, structured content, sources,
+  destinations, and provider destinations.
+- Added bounded advisory blind-spot diagnostics, including explicit expected
+  layer checks and aggregate external mapping evidence without raw content,
+  paths, keys, or inferred dropped-event counts.
+- Added `--coverage-json`, `--coverage-markdown`, and repeatable
+  `--expect-layer` options to `scan-trace` and `scan-external-trace`, plus
+  matching standalone and facade SDK APIs.
+- Preserved Audit Report schema v3, detector, Guard, redaction, Exposure Diff,
+  default CLI output, CI behavior, and success exit codes for coverage warnings.
+
+Coverage describes only the normalized input observed by the audit. It does not
+prove execution completeness; zero findings does not prove an execution was
+PHI-free; and a coverage warning is not a HIPAA noncompliance determination.
+
 ## 0.8.2
 
 - Added an optional, bounded Markdown Exposure Regression Review for GitHub Job

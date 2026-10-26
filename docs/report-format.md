@@ -10,6 +10,10 @@ derived from the Diff result. It does not add fields to Audit Report schema v3
 or Diff schema v1. It contains only aggregate counts and fixed guidance text,
 remains advisory/non-blocking, and is not a HIPAA compliance certification.
 
+The optional v0.8.3 Audit Coverage output is also a separate JSON/Markdown
+contract. It does not add fields to Audit Report schema v3 and contains no
+findings or raw trace data. See [Audit Coverage Diagnostics](audit-coverage.md).
+
 ## JSON Report
 
 Top-level fields:

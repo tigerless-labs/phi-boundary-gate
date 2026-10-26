@@ -2,10 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, Iterable, Mapping
 
+from .adapters import TraceAdapter
 from .api import GuardDecision, GuardMode, ScanFinding, guard_text, redact_text, scan_text
 from .audit import AuditResult, audit_events, audit_trace
 from .compliance import ComplianceContext, ComplianceDecision, CompliancePolicy, guard_compliance
+from .coverage import AuditCoverageResult, build_audit_coverage
 from .policy import Policy, load_policy
 from .project import ProjectConfig, discover_project_config
 from .report import ReportValueMode
@@ -140,6 +143,47 @@ class PhiBoundaryGate:
             diagnostics_path=diagnostics_path,
             policy_path=policy_path or self._policy_path(),
             report_value_mode=report_value_mode,
+        )
+
+    def coverage_events(
+        self,
+        events: list[TraceEvent],
+        *,
+        expected_layers: Iterable[str] = (),
+        mapping_diagnostics: Mapping[str, Any] | None = None,
+    ) -> AuditCoverageResult:
+        return build_audit_coverage(
+            events,
+            expected_layers=expected_layers,
+            mapping_diagnostics=mapping_diagnostics,
+        )
+
+    def coverage_trace(
+        self,
+        trace_path: Path | str,
+        *,
+        expected_layers: Iterable[str] = (),
+    ) -> AuditCoverageResult:
+        from .trace import load_trace
+
+        return self.coverage_events(
+            load_trace(Path(trace_path)),
+            expected_layers=expected_layers,
+        )
+
+    def coverage_external_trace(
+        self,
+        input_path: Path | str,
+        *,
+        mapping: Path | str,
+        expected_layers: Iterable[str] = (),
+    ) -> AuditCoverageResult:
+        adapter = TraceAdapter.from_mapping(mapping)
+        events = adapter.load(input_path)
+        return self.coverage_events(
+            events,
+            expected_layers=expected_layers,
+            mapping_diagnostics=adapter.coverage_diagnostics(events),
         )
 
     def guard_compliance(

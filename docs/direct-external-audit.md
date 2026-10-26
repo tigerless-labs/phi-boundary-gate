@@ -15,6 +15,9 @@ phi-boundary-gate scan-external-trace \
   --out /tmp/phi-report.md \
   --json /tmp/phi-report.json \
   --diagnostics /tmp/phi-adapter-diagnostics.json \
+  --coverage-json /tmp/phi-coverage.json \
+  --coverage-markdown /tmp/phi-coverage.md \
+  --expect-layer model_input \
   --report-values redacted
 ```
 
@@ -24,7 +27,8 @@ The command:
 2. normalizes the external JSONL trace;
 3. preserves adapter provenance including `external_content_path`;
 4. runs the existing `scan-trace` audit path;
-5. writes the existing schema-v3 Markdown/JSON reports.
+5. writes the existing schema-v3 Markdown/JSON reports;
+6. optionally writes separate advisory coverage output.
 
 The normalized trace is temporary by default. To retain it for adapter
 debugging, add:

@@ -1,6 +1,6 @@
 """PHI boundary gating, redaction, and audit reporting."""
 
-__version__ = "0.8.2"
+__version__ = "0.8.3"
 
 from .adapters import (
     TraceAdapter,
@@ -14,6 +14,13 @@ from .adapters import (
 )
 from .api import GuardDecision, GuardMode, ScanFinding, guard_text, redact_text, scan_text
 from .audit import AuditResult, audit_events, audit_trace
+from .coverage import (
+    AuditCoverageResult,
+    build_audit_coverage,
+    render_coverage_markdown,
+    write_coverage_json,
+    write_coverage_markdown,
+)
 from .external_audit import audit_external_trace
 from .exposure_diff import (
     ExposureDiffResult,
@@ -60,6 +67,7 @@ __all__ = [
     "GuardDecision",
     "GuardMode",
     "AuditResult",
+    "AuditCoverageResult",
     "ExposureDiffResult",
     "PhiBoundaryGate",
     "ProjectConfig",
@@ -88,6 +96,7 @@ __all__ = [
     "compare_report_files",
     "build_review_guidance",
     "build_conversion_diagnostics",
+    "build_audit_coverage",
     "build_report",
     "check_project_config",
     "discover_project_config",
@@ -104,11 +113,14 @@ __all__ = [
     "redact_text",
     "redacted_trace_events",
     "render_markdown",
+    "render_coverage_markdown",
     "render_exposure_diff_markdown",
     "render_exposure_review_summary",
     "scan_text",
     "validate_trace_mapping",
     "write_conversion_diagnostics",
+    "write_coverage_json",
+    "write_coverage_markdown",
     "write_exposure_diff_json",
     "write_exposure_diff_markdown",
     "write_exposure_review_summary",

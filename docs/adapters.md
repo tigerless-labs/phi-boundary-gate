@@ -5,7 +5,7 @@ does not require those projects to adopt its trace schema internally. Instead,
 use `convert-trace` to normalize generic JSONL into the package trace schema,
 then run `validate-trace` and `scan-trace`.
 
-Mapping v1 is the supported generic JSONL mapping contract for the `0.7.x`
+Mapping v1 is the supported generic JSONL mapping contract for the `0.8.x`
 release line. The adapter is intentionally small: it supports common JSONL event
 logs, but it is not a full JSONPath engine and does not try to model every agent
 framework.
@@ -260,6 +260,16 @@ missing in a particular input line.
 Diagnostics are conversion-time summaries, not schema validation. Use them to see
 whether fallback fields and optional content fields are actually exercised by a
 sample trace before relying on the mapping in CI.
+
+When `scan-external-trace` writes optional coverage output, it reuses the
+normalized in-memory events and mapping configuration to count unused optional
+content fields. Coverage exports only the aggregate count: raw external keys,
+paths, and event bodies are omitted. An unused optional field is evidence about
+the observed sample, not proof that an event was dropped.
+
+SDK callers can pass `adapter.coverage_diagnostics(events)` to
+`build_audit_coverage(...)`; `PhiBoundaryGate.coverage_external_trace(...)`
+performs that composition directly.
 
 ## Content Fields
 
