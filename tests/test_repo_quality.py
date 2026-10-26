@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from phi_boundary_gate import (  # noqa: E402
+    AuditCoverageResult,
     AuditResult,
     ExposureDiffResult,
     PhiBoundaryGate,
@@ -22,6 +23,7 @@ from phi_boundary_gate import (  # noqa: E402
     audit_events,
     audit_external_trace,
     audit_trace,
+    build_audit_coverage,
     compare_audit_reports,
     compare_report_files,
     build_report,
@@ -87,6 +89,7 @@ class RepoQualityTest(unittest.TestCase):
             detect_candidates("No PHI here.", enable_presidio=True)
 
     def test_public_sdk_api_exports_are_available(self) -> None:
+        self.assertEqual(AuditCoverageResult.__name__, "AuditCoverageResult")
         self.assertEqual(AuditResult.__name__, "AuditResult")
         self.assertEqual(ExposureDiffResult.__name__, "ExposureDiffResult")
         self.assertEqual(PhiBoundaryGate.__name__, "PhiBoundaryGate")
@@ -99,6 +102,7 @@ class RepoQualityTest(unittest.TestCase):
         self.assertEqual(audit_events.__name__, "audit_events")
         self.assertEqual(audit_external_trace.__name__, "audit_external_trace")
         self.assertEqual(audit_trace.__name__, "audit_trace")
+        self.assertEqual(build_audit_coverage.__name__, "build_audit_coverage")
         self.assertEqual(compare_audit_reports.__name__, "compare_audit_reports")
         self.assertEqual(compare_report_files.__name__, "compare_report_files")
         self.assertEqual(build_report.__name__, "build_report")

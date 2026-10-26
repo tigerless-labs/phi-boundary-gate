@@ -59,3 +59,23 @@ Validate a normalized trace without scanning it:
 ```bash
 phi-boundary-gate validate-trace --trace normalized-trace.jsonl
 ```
+
+## Observed Coverage
+
+`scan-trace` can optionally summarize the normalized events actually presented
+to the scanner:
+
+```bash
+phi-boundary-gate scan-trace \
+  --trace normalized-trace.jsonl \
+  --policy policy.yml \
+  --out report.md \
+  --json report.json \
+  --coverage-json coverage.json \
+  --expect-layer model_input
+```
+
+Coverage counts events separately from scalar/plain-text content segments. It
+does not infer unrecorded events or declare a layer missing unless the caller
+explicitly supplies `--expect-layer`. See
+[Audit Coverage Diagnostics](audit-coverage.md).

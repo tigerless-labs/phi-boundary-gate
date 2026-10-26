@@ -157,6 +157,32 @@ mark semantic configuration as unknown.
 `boundary_exposures`, `has_findings`, `has_violations`, `to_dict()`,
 `to_markdown()`, `write_json()`, and `write_markdown()`.
 
+## Audit Coverage SDK
+
+Coverage is computed independently from findings and does not modify the audit
+report:
+
+```python
+from phi_boundary_gate import build_audit_coverage, load_trace
+
+events = load_trace("normalized-trace.jsonl")
+coverage = build_audit_coverage(
+    events,
+    expected_layers=["model_input", "tool_output"],
+)
+coverage.write_json("coverage.json")
+coverage.write_markdown("coverage.md")
+```
+
+`PhiBoundaryGate` provides `coverage_events(...)`, `coverage_trace(...)`, and
+`coverage_external_trace(...)` facade methods. `AuditCoverageResult` exposes
+`summary`, `diagnostics`, `has_warnings`, `to_dict()`, `to_markdown()`,
+`write_json()`, and `write_markdown()`.
+
+Coverage output is aggregate and advisory. It never copies raw content, file
+paths, external JSON keys, or findings, and warnings do not alter audit or Guard
+decisions. See [Audit Coverage Diagnostics](audit-coverage.md).
+
 ## Compare Audit Reports
 
 Exposure Diff is also available without invoking the CLI:

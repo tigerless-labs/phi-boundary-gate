@@ -3,7 +3,7 @@
 This project is a Python package. Other projects should import it through normal
 package installation, not by copying source files.
 
-The examples below target v0.8.2.
+The examples below target v0.8.3.
 
 ## PyPI Install
 
@@ -166,14 +166,14 @@ package index:
 
 ```bash
 python3 -m pip install \
-  "phi-boundary-gate @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.8.2"
+  "phi-boundary-gate @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.8.3"
 ```
 
 The NER extra works with the same fallback:
 
 ```bash
 python3 -m pip install \
-  "phi-boundary-gate[ner] @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.8.2"
+  "phi-boundary-gate[ner] @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.8.3"
 ```
 
 For short-term testing, a commit SHA is also valid:
@@ -200,8 +200,8 @@ Release publishing uses GitHub Actions and PyPI Trusted Publishing:
 5. Create and push the release tag:
 
 ```bash
-git tag -a v0.8.2 -m "v0.8.2: Advisory Regression Insights"
-git push origin v0.8.2
+git tag -a v0.8.3 -m "v0.8.3: Audit Coverage & Blind-Spot Diagnostics"
+git push origin v0.8.3
 ```
 
 The tag workflow publishes the same built package shape to PyPI.

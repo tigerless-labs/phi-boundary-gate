@@ -1,7 +1,7 @@
 <h1 align="center">PHI Boundary Gate</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/release-v0.8.2-brightgreen.svg" alt="release v0.8.2" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
+  <img src="https://img.shields.io/badge/release-v0.8.3-brightgreen.svg" alt="release v0.8.3" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
 </p>
 
 **PHI Boundary Gate** detects, gates, redacts, and reports PHI candidate
@@ -22,6 +22,7 @@ calls when the configured PHI and compliance policy says the route is not allowe
 |---|---|
 | **Boundary-first reports** | Groups repeated PHI candidates across trace events so you can see the path, not only the match. |
 | **Exposure change analysis** | Compares two JSON audit reports with configuration provenance, comparability diagnostics, and observed risk direction. |
+| **Audit coverage diagnostics** | Optionally summarizes observed events and scannable content, then reports bounded, advisory blind-spot warnings. |
 | **Path-aware audit schema** | Report schema v3 records JSON content paths and external adapter paths for structured payloads. |
 | **Hybrid candidate detection** | Built-in regex rules cover common synthetic PHI variants; optional local Presidio detection can add NER-backed spans. |
 | **Semantic context gate** | An optional provider-neutral resolver classifies who a candidate represents, what information it is linked to, and its semantic PHI disposition. |
@@ -72,6 +73,29 @@ PYTHONPATH=src python3 -m phi_boundary_gate.cli scan-trace \
 
 Invalid trace or policy input returns exit code `2` and writes the validation
 error to stderr.
+
+### Inspect observed audit coverage
+
+Coverage exports are opt-in and separate from the existing audit report:
+
+```bash
+phi-boundary-gate scan-trace \
+  --trace samples/traces/no_phi.jsonl \
+  --policy samples/policies/default.yml \
+  --out /tmp/phi-report.md \
+  --json /tmp/phi-report.json \
+  --coverage-json /tmp/phi-coverage.json \
+  --coverage-markdown /tmp/phi-coverage.md \
+  --expect-layer model_input \
+  --expect-layer tool_output
+```
+
+For example, a trace may produce zero findings while also warning that an
+explicitly expected `model_input` layer was not observed. That warning is
+advisory: it does not fail the command, alter detection or Guard decisions, or
+declare a compliance violation. Observed coverage does not prove complete agent
+execution, and zero findings does not prove that the execution was PHI-free.
+See [Audit Coverage Diagnostics](docs/audit-coverage.md).
 
 ### Install from another project
 
@@ -553,7 +577,7 @@ Run the tests:
 PYTHONPATH=src python3 -m unittest discover -s tests
 ```
 
-Current release: `v0.8.2`.
+Current release: `v0.8.3`.
 
 ## Limits
 

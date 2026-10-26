@@ -41,6 +41,10 @@ class TraceAdapter:
     def diagnostics(self, input_path: Path | str) -> dict[str, Any]:
         return build_conversion_diagnostics(Path(input_path), self.mapping)
 
+    def coverage_diagnostics(self, events: list[TraceEvent]) -> dict[str, Any]:
+        """Return mapping evidence usable by coverage without rereading input."""
+        return build_mapping_coverage_diagnostics(events, self.mapping)
+
     def summary(self) -> dict[str, Any]:
         return mapping_summary(self.mapping)
 
@@ -124,6 +128,25 @@ def build_conversion_diagnostics(input_path: Path, mapping: TraceMapping) -> dic
         ],
         "generated_event_id_count": _generated_event_id_count(raw_events, mapping.raw),
         "field_fallbacks": _field_fallback_counts(raw_events, mapping.raw),
+    }
+
+
+def build_mapping_coverage_diagnostics(
+    events: list[TraceEvent], mapping: TraceMapping
+) -> dict[str, Any]:
+    """Derive optional-content mapping evidence from normalized events.
+
+    This intentionally mirrors the relevant conversion-diagnostics field while
+    avoiding a second read of the external trace.
+    """
+    configured_content = _configured_content_field_specs(mapping.raw["content"])
+    content_path_counts = _count_content_paths(events)
+    return {
+        "optional_content_paths_never_used": [
+            spec["field"]
+            for spec in configured_content
+            if not spec["required"] and spec["field"] not in content_path_counts
+        ]
     }
 
 

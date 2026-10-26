@@ -19,6 +19,31 @@ Configure PyPI Trusted Publishing before the first release:
 
 Trusted Publishing avoids long-lived PyPI API tokens in GitHub Secrets.
 
+## v0.8.3
+
+Audit Coverage & Blind-Spot Diagnostics ships in one feature PR. The coverage
+JSON/Markdown contract is separate from Audit Report schema v3, is disabled by
+default, and remains advisory. Do not add a Required Check, coverage threshold,
+or fail-on-warning behavior. Run the complete validation suite below, the
+existing CLI/corpus/package smoke paths, and the new coverage CLI/SDK tests.
+
+Only after required PR checks and review/branch-protection requirements pass,
+merge to `main`, confirm main CI, and verify the main workflow's TestPyPI
+publication and installation. Then tag the merged main commit only:
+
+```bash
+git switch main
+git pull --ff-only origin main
+git tag -a v0.8.3 -m "v0.8.3: Audit Coverage & Blind-Spot Diagnostics"
+git push origin v0.8.3
+```
+
+Wait for the tag workflow's Trusted Publishing job to succeed before creating
+GitHub Release `v0.8.3 — Audit Coverage & Blind-Spot Diagnostics`. Confirm the
+tag, GitHub Release, TestPyPI version, and PyPI version do not already exist.
+Never tag the feature branch, publish manually, bypass review, or continue past
+a failed Required Check.
+
 ## v0.8.2
 
 Advisory Regression Insights ships as one feature PR without changing existing
