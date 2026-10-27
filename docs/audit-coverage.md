@@ -118,4 +118,8 @@ Three boundaries are fundamental:
 2. Zero Findings does not prove that no PHI existed.
 3. A Coverage Warning is not a HIPAA Noncompliance determination.
 
+Coverage JSON v1 can also be compared as optional evidence beside Exposure Diff.
+That v0.8.4 operation consumes these summaries directly and does not rescan the
+trace. See [Coverage-Aware Exposure Diff](coverage-aware-exposure-diff.md).
+
 No LLM, network service, or new runtime dependency is used.

@@ -14,6 +14,12 @@ The optional v0.8.3 Audit Coverage output is also a separate JSON/Markdown
 contract. It does not add fields to Audit Report schema v3 and contains no
 findings or raw trace data. See [Audit Coverage Diagnostics](audit-coverage.md).
 
+The optional v0.8.4 Coverage-Aware Exposure Diff is another independent
+JSON/Markdown sidecar. It compares two Coverage JSON v1 summaries and may use
+the aggregate Exposure Diff summary for fixed-template interpretation. It does
+not change Audit Report schema v3, Exposure Diff schema v1, or Coverage JSON v1.
+See [Coverage-Aware Exposure Diff](coverage-aware-exposure-diff.md).
+
 ## JSON Report
 
 Top-level fields:

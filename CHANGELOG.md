@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.8.4
+
+- Added opt-in Coverage Diff JSON and Markdown sidecars that compare v0.8.3
+  observed event/content metrics, per-layer counts, expected-layer evidence,
+  and blind-spot diagnostic changes without rescanning traces.
+- Added explicit absolute and percentage deltas with N/A semantics for zero
+  baselines, stable ordering, bounded reason codes, and unavailable states for
+  missing or incompatible Coverage evidence.
+- Added fixed-template coverage-aware interpretation for exposure decrease with
+  narrower scope, exposure increase with broader scope, stable aggregate
+  coverage, mixed scope changes, and unavailable evidence.
+- Added paired `compare-reports` coverage inputs and independent sidecar outputs,
+  plus reusable `compare_coverage` and `compare_coverage_files` SDK entrypoints.
+- Preserved Audit Report schema v3, Exposure Diff schema v1, Guard, compliance,
+  redaction, default CLI/SDK behavior, CI conditions, and advisory exit status.
+
+Coverage-Aware Diff compares observed audit scope. It does not establish
+complete trace capture, causal risk changes, true PHI recall, or HIPAA
+compliance.
+
 ## 0.8.3
 
 - Added opt-in JSON and Markdown audit coverage summaries for normalized trace

@@ -14,6 +14,7 @@ from .adapters import (
     write_converted_trace,
 )
 from .coverage import build_audit_coverage
+from .coverage_diff import compare_coverage_files
 from .exposure_diff import compare_report_files
 from .policy import load_policy
 from .project import check_project_config, init_project
@@ -79,6 +80,26 @@ def main(argv: list[str] | None = None) -> int:
         "--review-summary",
         type=Path,
         help="Optional path for a concise advisory Markdown review summary.",
+    )
+    compare_parser.add_argument(
+        "--before-coverage",
+        type=Path,
+        help="Optional baseline Audit Coverage JSON; requires --after-coverage and a coverage sidecar output.",
+    )
+    compare_parser.add_argument(
+        "--after-coverage",
+        type=Path,
+        help="Optional candidate Audit Coverage JSON; requires --before-coverage and a coverage sidecar output.",
+    )
+    compare_parser.add_argument(
+        "--coverage-review",
+        type=Path,
+        help="Optional path for the advisory coverage-aware Markdown review.",
+    )
+    compare_parser.add_argument(
+        "--coverage-diff-json",
+        type=Path,
+        help="Optional path for the advisory Coverage Diff JSON sidecar.",
     )
 
     mapping_parser = subparsers.add_parser("validate-mapping", help="Validate a mapping v1 YAML file.")
@@ -314,10 +335,16 @@ def _write_scan_outputs(
 def _compare_reports(args: argparse.Namespace) -> int:
     try:
         result = compare_report_files(args.before, args.after)
+        coverage_result = _coverage_diff_from_args(args, result)
         result.write_markdown(args.out)
         result.write_json(args.json_out)
         if args.review_summary:
             result.write_review_summary(args.review_summary)
+        if coverage_result is not None:
+            if args.coverage_review:
+                coverage_result.write_markdown(args.coverage_review)
+            if args.coverage_diff_json:
+                coverage_result.write_json(args.coverage_diff_json)
     except (OSError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
@@ -337,7 +364,37 @@ def _compare_reports(args: argparse.Namespace) -> int:
     )
     if args.review_summary:
         print(f"Wrote advisory regression review summary: {args.review_summary}")
+    if coverage_result is not None:
+        outputs = [
+            str(path)
+            for path in (args.coverage_review, args.coverage_diff_json)
+            if path is not None
+        ]
+        comparison = coverage_result.to_dict()["coverage_comparison"]
+        print(
+            "Wrote advisory coverage-aware diff: {outputs}; status={status}, scope={scope}".format(
+                outputs=" and ".join(outputs),
+                status=comparison["status"],
+                scope=comparison.get("scope_direction", "unknown"),
+            )
+        )
     return 0
+
+
+def _coverage_diff_from_args(args: argparse.Namespace, exposure_diff):
+    inputs = (args.before_coverage, args.after_coverage)
+    outputs = (args.coverage_review, args.coverage_diff_json)
+    if not any(inputs) and not any(outputs):
+        return None
+    if not all(inputs):
+        raise ValueError("--before-coverage and --after-coverage must be provided together")
+    if not any(outputs):
+        raise ValueError("coverage inputs require --coverage-review or --coverage-diff-json")
+    return compare_coverage_files(
+        args.before_coverage,
+        args.after_coverage,
+        exposure_diff=exposure_diff,
+    )
 
 
 def _convert_trace(args: argparse.Namespace) -> int:

@@ -19,6 +19,32 @@ Configure PyPI Trusted Publishing before the first release:
 
 Trusted Publishing avoids long-lived PyPI API tokens in GitHub Secrets.
 
+## v0.8.4
+
+Coverage-Aware Exposure Diff ships in one feature PR. Its JSON/Markdown output
+is an opt-in sidecar: do not change Audit Report schema v3, Exposure Diff schema
+v1, default `compare-reports` output, Required Checks, or advisory exit status.
+Run the complete suite, release guard, CLI sample smoke, trace-corpus golden
+comparison, package smoke, and coverage-aware CLI/SDK integration tests.
+
+Confirm v0.8.4 does not already exist on TestPyPI, PyPI, as a tag, or as a
+GitHub Release. Only after review and branch-protection requirements pass, merge
+the feature PR, confirm main CI and the TestPyPI publish/install, then tag the
+merged main commit:
+
+```bash
+git switch main
+git pull --ff-only origin main
+git tag -a v0.8.4 -m "v0.8.4: Coverage-Aware Exposure Diff"
+git push origin v0.8.4
+```
+
+Wait for the tag workflow's Trusted Publishing job to publish and validate
+PyPI before creating GitHub Release
+`v0.8.4 — Coverage-Aware Exposure Diff`. Never tag the feature branch, publish
+manually, bypass review, or continue past a failed Required Check or required
+environment approval.
+
 ## v0.8.3
 
 Audit Coverage & Blind-Spot Diagnostics ships in one feature PR. The coverage

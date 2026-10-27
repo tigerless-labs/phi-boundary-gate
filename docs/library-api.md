@@ -207,6 +207,35 @@ The Review Summary is aggregate, bounded, advisory, and non-blocking. It does
 not modify the Diff JSON contract or establish PHI leakage, causal attribution,
 HIPAA noncompliance, or risk elimination.
 
+## Compare Coverage Evidence
+
+Coverage-Aware Exposure Diff reuses existing Coverage JSON rather than scanning
+traces again:
+
+```python
+from phi_boundary_gate import compare_coverage_files, compare_report_files
+
+exposure = compare_report_files("baseline-report.json", "candidate-report.json")
+coverage_diff = compare_coverage_files(
+    "baseline-coverage.json",
+    "candidate-coverage.json",
+    exposure_diff=exposure,
+)
+coverage_diff.write_json("coverage-diff.json")
+coverage_diff.write_markdown("coverage-review.md")
+```
+
+Use `compare_coverage(...)` for in-memory coverage dictionaries and
+`render_coverage_diff_markdown(...)` for a custom renderer flow.
+`CoverageDiffResult` exposes `to_dict()`, `to_markdown()`, `write_json()`, and
+`write_markdown()`. Unsupported or missing Coverage evidence produces an
+explicit unavailable result; malformed Coverage v1 input raises `ValueError`.
+
+All output is aggregate, fixed-template, advisory, and non-blocking. It does not
+copy raw content or paths, measure true PHI recall, attribute a change to Agent
+behavior, or override Guard/compliance decisions. See
+[Coverage-Aware Exposure Diff](coverage-aware-exposure-diff.md).
+
 ## Stable Exceptions
 
 Package-level validation and integration errors inherit from
