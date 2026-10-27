@@ -1,6 +1,6 @@
 """PHI boundary gating, redaction, and audit reporting."""
 
-__version__ = "0.8.3"
+__version__ = "0.8.4"
 
 from .adapters import (
     TraceAdapter,
@@ -20,6 +20,16 @@ from .coverage import (
     render_coverage_markdown,
     write_coverage_json,
     write_coverage_markdown,
+)
+from .coverage_diff import (
+    COVERAGE_AWARE_DISCLAIMER,
+    CoverageDiffResult,
+    compare_coverage,
+    compare_coverage_files,
+    load_coverage_report,
+    render_coverage_diff_markdown,
+    write_coverage_diff_json,
+    write_coverage_diff_markdown,
 )
 from .external_audit import audit_external_trace
 from .exposure_diff import (
@@ -68,6 +78,7 @@ __all__ = [
     "GuardMode",
     "AuditResult",
     "AuditCoverageResult",
+    "CoverageDiffResult",
     "ExposureDiffResult",
     "PhiBoundaryGate",
     "ProjectConfig",
@@ -93,6 +104,8 @@ __all__ = [
     "audit_external_trace",
     "audit_trace",
     "compare_audit_reports",
+    "compare_coverage",
+    "compare_coverage_files",
     "compare_report_files",
     "build_review_guidance",
     "build_conversion_diagnostics",
@@ -105,6 +118,7 @@ __all__ = [
     "init_project",
     "load_compliance_policy",
     "load_audit_report",
+    "load_coverage_report",
     "load_external_trace",
     "load_policy",
     "load_project_config",
@@ -114,6 +128,7 @@ __all__ = [
     "redacted_trace_events",
     "render_markdown",
     "render_coverage_markdown",
+    "render_coverage_diff_markdown",
     "render_exposure_diff_markdown",
     "render_exposure_review_summary",
     "scan_text",
@@ -121,6 +136,8 @@ __all__ = [
     "write_conversion_diagnostics",
     "write_coverage_json",
     "write_coverage_markdown",
+    "write_coverage_diff_json",
+    "write_coverage_diff_markdown",
     "write_exposure_diff_json",
     "write_exposure_diff_markdown",
     "write_exposure_review_summary",
@@ -128,4 +145,5 @@ __all__ = [
     "write_markdown_report",
     "write_converted_trace",
     "write_redacted_trace",
+    "COVERAGE_AWARE_DISCLAIMER",
 ]

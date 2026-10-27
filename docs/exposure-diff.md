@@ -44,6 +44,11 @@ The normalized policy fingerprints differ, so the result is explicitly `limited`
 disposition change may be configuration-driven and must not be attributed solely to Agent
 behavior.
 
+To compare observed audit scope alongside this unchanged Exposure Diff, generate
+Coverage JSON for both scans and use the optional v0.8.4 sidecars described in
+[Coverage-Aware Exposure Diff](coverage-aware-exposure-diff.md). The existing
+Diff JSON schema, Markdown, and default command behavior are not modified.
+
 ## Advisory regression review summary
 
 `--review-summary` is optional. When provided, it writes a separate, concise

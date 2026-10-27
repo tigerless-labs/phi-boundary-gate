@@ -8,6 +8,7 @@
 - [Semantic Context Gate](semantic-context-gate.md) - Resolver contract, fail-safe behavior, and single-event scope.
 - [Exposure Diff](exposure-diff.md) - Advisory comparison of structural exposure routes across audit reports.
 - [Audit Coverage Diagnostics](audit-coverage.md) - Optional observed-scope summary and advisory blind-spot diagnostics.
+- [Coverage-Aware Exposure Diff](coverage-aware-exposure-diff.md) - Optional comparison of Exposure Diff changes with observed audit-scope changes.
 - [Compliance guard](compliance-guard.md) - Service eligibility checks for PHI-bearing provider calls.
 - [Trace adapters](adapters.md) - Mapping v1 for normalizing external agent JSONL traces.
 - [Trace schema](trace-schema.md) - JSONL trace event format.

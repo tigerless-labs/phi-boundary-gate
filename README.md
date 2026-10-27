@@ -1,7 +1,7 @@
 <h1 align="center">PHI Boundary Gate</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/release-v0.8.3-brightgreen.svg" alt="release v0.8.3" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
+  <img src="https://img.shields.io/badge/target-v0.8.4-blue.svg" alt="target v0.8.4" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
 </p>
 
 **PHI Boundary Gate** detects, gates, redacts, and reports PHI candidate
@@ -23,6 +23,7 @@ calls when the configured PHI and compliance policy says the route is not allowe
 | **Boundary-first reports** | Groups repeated PHI candidates across trace events so you can see the path, not only the match. |
 | **Exposure change analysis** | Compares two JSON audit reports with configuration provenance, comparability diagnostics, and observed risk direction. |
 | **Audit coverage diagnostics** | Optionally summarizes observed events and scannable content, then reports bounded, advisory blind-spot warnings. |
+| **Coverage-aware exposure review** | Optionally compares two coverage sidecars alongside Exposure Diff without inferring causality or changing CI. |
 | **Path-aware audit schema** | Report schema v3 records JSON content paths and external adapter paths for structured payloads. |
 | **Hybrid candidate detection** | Built-in regex rules cover common synthetic PHI variants; optional local Presidio detection can add NER-backed spans. |
 | **Semantic context gate** | An optional provider-neutral resolver classifies who a candidate represents, what information it is linked to, and its semantic PHI disposition. |
@@ -217,8 +218,33 @@ The optional v0.8.2 Review Summary adds bounded, fixed-template guidance codes
 for newly observed routes, disposition direction, and configuration uncertainty.
 It contains aggregate counts only, is advisory/non-blocking, and does not change
 the Diff JSON or default Markdown output.
+v0.8.4 can additionally consume paired v0.8.3 Coverage JSON files and write
+independent coverage-aware JSON/Markdown sidecars:
+
+```bash
+phi-boundary-gate compare-reports \
+  --before baseline-report.json \
+  --after candidate-report.json \
+  --out exposure-diff.md \
+  --json exposure-diff.json \
+  --before-coverage baseline-coverage.json \
+  --after-coverage candidate-coverage.json \
+  --coverage-review coverage-review.md \
+  --coverage-diff-json coverage-diff.json
+```
+
+The two Coverage inputs are paired and opt-in. Fewer observed exposures together
+with fewer events or layers is evidence of a narrower observed audit scope, not
+proof of lower PHI risk. Coverage-aware output never changes Guard, Disposition,
+Compliance Decision, the existing Diff, or a successful advisory exit code.
+
+**Coverage-Aware Diff compares observed audit scope. It does not establish
+complete trace capture, causal risk changes, or HIPAA compliance.**
+
 See [Exposure Diff](docs/exposure-diff.md) for a complete synthetic scan-to-diff
-example and the versioned JSON contract.
+example and the versioned JSON contract, and
+[Coverage-Aware Exposure Diff](docs/coverage-aware-exposure-diff.md) for the
+sidecar schema and full synthetic walkthrough.
 
 ### Convert an external agent trace
 
@@ -577,7 +603,7 @@ Run the tests:
 PYTHONPATH=src python3 -m unittest discover -s tests
 ```
 
-Current release: `v0.8.3`.
+Target release: `v0.8.4`.
 
 ## Limits
 
