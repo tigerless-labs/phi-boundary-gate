@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.8.5
+
+- Added opt-in declared-PHI enforcement to the standalone compliance guard and
+  SDK facade, so caller-declared `real_phi` can run existing service eligibility
+  checks even when content detection returns no findings.
+- Preserved detector truth, policy format, default Guard behavior, and existing
+  block reasons by keeping the option disabled by default and reusing the
+  current service evaluator.
+- Added offline provider-preflight and mapped RAG/Agent audit examples plus an
+  Integration Cookbook covering Audit, Guard, Redact, and Compare workflows.
+- Corrected audit-safety guidance: detector-redacted text may equal the original
+  input when no finding exists, so ordinary logs should use reviewed structural
+  field whitelists.
+- Preserved Audit Report schema v3, Exposure Diff schema v1, Coverage Diff
+  sidecars, Trace Mapping v1, CLI exit behavior, and Required Checks.
+
 ## 0.8.4
 
 - Added opt-in Coverage Diff JSON and Markdown sidecars that compare v0.8.3

@@ -166,7 +166,7 @@ class SdkProjectTest(unittest.TestCase):
         )
 
         self.assertNotIn("MBR-SYN-8842", guard.stdout)
-        self.assertIn("[REDACTED_MEMBER_ID]", guard.stdout)
+        self.assertIn('"finding_count": 1', guard.stdout)
         self.assertNotIn("MBR-SYN-8842", redact.stdout)
         self.assertIn("[REDACTED_MEMBER_ID]", redact.stdout)
         self.assertNotIn("MBR-SYN-8842", audit.stdout)
@@ -174,6 +174,58 @@ class SdkProjectTest(unittest.TestCase):
         self.assertNotIn("MBR-SYN-8842", external_audit.stdout)
         self.assertIn('"schema_version": 3', external_audit.stdout)
         self.assertIn("generic_agent_run.jsonl", external_audit.stdout)
+
+    def test_cross_project_integration_examples_run_offline(self) -> None:
+        preflight = subprocess.run(
+            [sys.executable, str(ROOT / "examples/integrations/provider_boundary_preflight.py")],
+            check=True,
+            capture_output=True,
+            text=True,
+            env=self.subprocess_env(),
+        )
+        preflight_payload = json.loads(preflight.stdout)
+
+        self.assertFalse(preflight_payload["allowed"]["should_block"])
+        self.assertTrue(preflight_payload["allowed"]["provider_called"])
+        self.assertEqual(preflight_payload["allowed"]["finding_count"], 0)
+        self.assertTrue(preflight_payload["blocked"]["should_block"])
+        self.assertFalse(preflight_payload["blocked"]["provider_called"])
+        self.assertEqual(preflight_payload["offline_client_calls"], 1)
+        self.assertNotIn("follow-up summary", preflight.stdout)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            trace_audit = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "examples/integrations/rag_agent_trace_audit.py"),
+                    "--out-dir",
+                    tmp,
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+                env=self.subprocess_env(),
+            )
+            trace_payload = json.loads(trace_audit.stdout)
+            output = Path(tmp)
+
+            self.assertEqual(trace_payload["audit_schema_version"], 3)
+            self.assertEqual(trace_payload["coverage_schema_version"], 1)
+            self.assertEqual(trace_payload["report_value_mode"], "hashed")
+            self.assertEqual(trace_payload["potential_blind_spot_codes"], [])
+            for name in (
+                "audit-report.json",
+                "audit-report.md",
+                "coverage.json",
+                "coverage.md",
+                "mapping-diagnostics.json",
+            ):
+                artifact = output / name
+                self.assertTrue(artifact.is_file())
+                artifact_text = artifact.read_text(encoding="utf-8")
+                self.assertNotIn("MBR-SYN-8842", artifact_text)
+                self.assertNotIn("CLM-SYN-44501", artifact_text)
+                self.assertNotIn("Casey Example", artifact_text)
 
 
 if __name__ == "__main__":

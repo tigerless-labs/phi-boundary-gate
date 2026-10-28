@@ -1,0 +1,27 @@
+version: 1
+default_action: block
+
+phi_statuses:
+  real_phi:
+    requires_baa: true
+
+environments:
+  production:
+    require_redacted_logging: true
+    require_audit: true
+
+services:
+  fictional_northstar_gateway:
+    vendor: northstar_example
+    service: model_gateway
+    covered_service: true
+    baa_executed: true
+    allowed_phi_status: [real_phi]
+    model_patterns: [care-text-1]
+    denied_model_patterns: ["*preview*", "*beta*", "*experimental*"]
+    allowed_features: [text_generation]
+    denied_features: [web_search, external_tools]
+    allowed_logging: [metadata_only, redacted_only]
+    allowed_storage: [none]
+    allow_preview: false
+    notes: Fictional tutorial profile; it is not evidence about any real provider or agreement.

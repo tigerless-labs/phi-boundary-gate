@@ -38,7 +38,11 @@ if decision.should_block:
     raise RuntimeError(decision.recommended_action)
 
 safe_log_text = gate.redact_for_log("debug member_id=MBR-SYN-8842")
-audit_payload = decision.to_safe_dict()
+audit_payload = {
+    "finding_count": len(decision.findings),
+    "categories": sorted({finding.category for finding in decision.findings}),
+    "should_block": decision.should_block,
+}
 ```
 
 `from_project()` discovers `.phi-boundary-gate/config.json` by walking upward
@@ -322,15 +326,21 @@ if decision.should_block:
     raise RuntimeError(decision.recommended_action)
 
 model_text = decision.redacted_text if decision.should_redact else decision.text
-payload = decision.to_safe_dict()
+payload = {
+    "finding_count": len(decision.findings),
+    "categories": sorted({finding.category for finding in decision.findings}),
+    "should_block": decision.should_block,
+}
 ```
 
 `guard_text` handles PHI detection and layer policy only. Use `guard_compliance` when a project also needs to enforce BAA, covered service, model, feature, logging, and storage eligibility.
 
 `GuardDecision.to_dict()` preserves the original detailed shape and includes the
 raw input text and raw finding values. Use it only where raw PHI handling is
-approved. Use `to_safe_dict()` for audit logs, application logs, and routine
-telemetry.
+approved. `to_safe_dict()` omits those fields but includes `redacted_text`;
+because detector-driven redaction returns the original text when nothing is
+detected, it is not an unconditional log-safe payload. Prefer a reviewed
+structural whitelist for audit logs and routine telemetry.
 
 ## Guard Before Covered Service Calls
 
@@ -340,32 +350,53 @@ from pathlib import Path
 from phi_boundary_gate import ComplianceContext, guard_compliance, load_compliance_policy
 
 compliance_policy = load_compliance_policy(Path("config/phi-compliance-policy.yml"))
+request_text = "Create the requested follow-up summary."
 decision = guard_compliance(
-    "member_id=MBR-SYN-8842",
+    request_text,
     layer="model_input",
     phi_policy=policy,
     compliance_policy=compliance_policy,
     context=ComplianceContext(
         phi_status="real_phi",
-        vendor="google",
-        service="vertex_ai",
-        endpoint="generate_content",
-        model="gemini-2.5-pro",
-        feature="online_prediction",
+        vendor="northstar_example",
+        service="model_gateway",
+        endpoint="generate",
+        model="care-text-1",
+        feature="text_generation",
         environment="production",
         logging="redacted_only",
         storage="none",
     ),
     enable_presidio=True,
+    enforce_declared_phi=True,
 )
 
 if decision.should_block:
     raise RuntimeError(decision.block_reasons)
 
-audit_payload = decision.to_dict()
+text_for_model = request_text  # Or explicitly choose decision.redacted_text.
+
+audit_payload = {
+    "should_block": decision.should_block,
+    "compliance_allowed": decision.compliance_allowed,
+    "block_reasons": decision.block_reasons,
+    "warning_codes": decision.warnings,
+    "finding_count": decision.audit["finding_count"],
+    "service_matched": decision.audit["service_matched"],
+    "service_id": decision.service_id,
+}
 ```
 
 `guard_compliance` does not discover contract status. It enforces the BAA and service facts supplied by the calling organization's compliance policy.
+`enforce_declared_phi=True` makes a `real_phi` declaration sufficient to run
+service eligibility checks even when no candidate is detected. It does not
+change `text_decision.has_phi`, create findings, or affect other PHI statuses.
+The default is `False` for backward compatibility. The same option is available
+on `PhiBoundaryGate.guard_compliance()`.
+
+Policy version 1 matches service profiles by vendor, service, and model pattern.
+`endpoint`, `region`, and `purpose` are recorded context, not policy-match
+dimensions.
 
 ## Guard Modes
 
@@ -375,13 +406,15 @@ audit_payload = decision.to_dict()
 - `redact`: set `should_redact` when PHI candidates were replaced in `redacted_text`.
 - `block_on_violation`: set `should_block` when any finding has policy disposition `violation`.
 
-`redacted_text` is always available for safe logging, even when `should_redact` is false.
+`redacted_text` is always available as the detector-driven transformation, but
+it is not guaranteed safe for logging. When no candidate is detected it equals
+the original text, and missed sensitive content cannot be redacted.
 
 ## Integration Patterns
 
-For a model-routing service, call `guard_text(..., layer="model_input")` before provider routing. Use `should_block` to enforce project-level PHI mode and provider eligibility. Use `redacted_text` for logs and error summaries.
+For a model-routing service, call `guard_text(..., layer="model_input")` before provider routing. Use `should_block` to enforce project-level PHI mode and provider eligibility. Log only reviewed structural metadata; use `redacted_text` only when detector-driven redaction is an accepted control for that destination.
 
-For an agent runtime, call `guard_text` around trace and log boundaries such as user messages, tool results, assembled model input, and compaction memory. Use `redacted_text` for ordinary logs and keep full boundary reports for synthetic or approved traces only.
+For an agent runtime, call `guard_text` around trace and log boundaries such as user messages, tool results, assembled model input, and compaction memory. Keep raw or detector-redacted text only in destinations approved for the residual miss risk, and keep full boundary reports for synthetic or approved traces only.
 
 For CI or offline audit, keep `mode="report_only"` for text guards and use
 `audit_trace()`, `audit_events()`, or the CLI report outputs for full traces.

@@ -181,6 +181,7 @@ def guard_compliance(
     *,
     enable_presidio: bool = False,
     semantic_resolver: SemanticResolver | None = None,
+    enforce_declared_phi: bool = False,
 ) -> ComplianceDecision:
     _validate_context(context)
 
@@ -203,7 +204,8 @@ def guard_compliance(
         block_reasons.append("phi_policy_violation")
         required_actions.append("Redact or remove PHI before using this context layer.")
 
-    if not text_decision.has_phi:
+    declared_phi_requires_evaluation = enforce_declared_phi and context.phi_status == "real_phi"
+    if not text_decision.has_phi and not declared_phi_requires_evaluation:
         if service is None and compliance_policy.default_action == "block":
             warnings.append("unknown_service_profile")
         return _decision(

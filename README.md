@@ -1,7 +1,7 @@
 <h1 align="center">PHI Boundary Gate</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/target-v0.8.4-blue.svg" alt="target v0.8.4" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
+  <img src="https://img.shields.io/badge/target-v0.8.5-blue.svg" alt="target v0.8.5" /> <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+" /> <img src="https://img.shields.io/badge/output-Markdown%20%7C%20JSON%20%7C%20JSONL-lightgrey.svg" alt="Markdown, JSON, and JSONL output" /> <img src="https://img.shields.io/badge/data-synthetic%20PHI%20only-yellow.svg" alt="synthetic PHI only" /> <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="license MIT" />
 </p>
 
 **PHI Boundary Gate** detects, gates, redacts, and reports PHI candidate
@@ -31,10 +31,22 @@ calls when the configured PHI and compliance policy says the route is not allowe
 | **External trace adapters** | Mapping v1 can normalize generic agent JSONL into the package trace schema before scanning. |
 | **Policy-driven redaction** | YAML policy decides whether each category is allowed, should be redacted, or is a violation in each layer. |
 | **Provider-call guard** | Checks organization-supplied BAA, covered service, model, feature, logging, and storage facts before PHI is sent. |
-| **Audit-safe by default** | Compliance decisions can be serialized without detected raw PHI values unless controlled debugging explicitly asks for them. |
+| **Audit-aware serialization** | Detailed decisions can omit detected raw finding values, while integrations use explicit structural log whitelists because undetected text is not guaranteed redacted. |
 | **Synthetic samples only** | The repository contains no real PHI and does not claim HIPAA compliance. |
 
 ## Quick Start
+
+Choose an integration path before reaching for lower-level modules:
+
+| Goal | Public entry point |
+|---|---|
+| Audit an existing Agent/RAG trace | `audit_external_trace()` or `scan-external-trace` |
+| Guard a provider-bound model request | `guard_compliance()` |
+| Redact detected spans for a log/report destination | `redact_text()` or `redact_for_log()` |
+| Compare observed exposure across revisions | `compare-reports` with optional coverage sidecars |
+
+The [Integration Cookbook](docs/integration-cookbook.md) provides complete,
+offline Guard, Audit, Redact, and Compare recipes.
 
 ### Run the bundled sample
 
@@ -480,7 +492,11 @@ if decision.should_block:
     raise RuntimeError(decision.recommended_action)
 
 safe_log_text = gate.redact_for_log("debug member_id=MBR-SYN-8842")
-audit_payload = decision.to_safe_dict()
+audit_payload = {
+    "finding_count": len(decision.findings),
+    "categories": sorted({item.category for item in decision.findings}),
+    "should_block": decision.should_block,
+}
 ```
 
 For full trace audits from another Python service, use the SDK audit helpers:
@@ -556,35 +572,52 @@ from phi_boundary_gate import (
 phi_policy = load_policy(Path("config/phi-policy.yml"))
 compliance_policy = load_compliance_policy(Path("config/phi-compliance-policy.yml"))
 
+request_text = "Create the requested follow-up summary."
 decision = guard_compliance(
-    "member_id=MBR-SYN-8842",
+    request_text,
     layer="model_input",
     phi_policy=phi_policy,
     compliance_policy=compliance_policy,
     context=ComplianceContext(
         phi_status="real_phi",
-        vendor="google",
-        service="vertex_ai",
-        endpoint="generate_content",
-        model="gemini-2.5-pro",
-        feature="online_prediction",
+        vendor="northstar_example",
+        service="model_gateway",
+        endpoint="generate",
+        model="care-text-1",
+        feature="text_generation",
         environment="production",
         logging="redacted_only",
         storage="none",
     ),
+    enforce_declared_phi=True,
 )
 
 if decision.should_block:
     raise RuntimeError(decision.block_reasons)
 
-text_for_model = decision.redacted_text
-audit_payload = decision.to_dict()
+# The application explicitly chooses original request or detector-driven
+# redaction after the route is allowed.
+text_for_model = request_text
+audit_payload = {
+    "should_block": decision.should_block,
+    "compliance_allowed": decision.compliance_allowed,
+    "block_reasons": decision.block_reasons,
+    "warning_codes": decision.warnings,
+    "finding_count": decision.audit["finding_count"],
+    "service_matched": decision.audit["service_matched"],
+}
 ```
 
 The guard enforces facts supplied by your organization. It cannot discover
 whether a BAA is signed, whether a service is covered, or whether a vendor changed
 its terms. Keep the bundled compliance sample as a schema example, not a contract
 source of truth.
+
+`enforce_declared_phi=True` evaluates existing service eligibility rules for a
+declared `real_phi` payload even when the detector returns no findings. It is
+off by default, does not create findings, and does not change other PHI statuses.
+`endpoint`, `region`, and `purpose` remain recorded context rather than policy
+match dimensions.
 
 See [Compliance Guard](docs/compliance-guard.md) and
 [Compliance Policy Schema](docs/compliance-policy-schema.md).
@@ -603,7 +636,7 @@ Run the tests:
 PYTHONPATH=src python3 -m unittest discover -s tests
 ```
 
-Target release: `v0.8.4`.
+Target release: `v0.8.5`.
 
 ## Limits
 
