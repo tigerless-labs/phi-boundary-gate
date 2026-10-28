@@ -1,6 +1,8 @@
 # Compliance Policy Schema
 
-The compliance policy is YAML. It describes the organization-approved service profiles that may receive PHI after `guard_text` detects PHI candidates.
+The compliance policy is YAML. It describes the organization-approved service
+profiles that may receive PHI after `guard_text` detects PHI candidates, or
+after a caller opts into declared `real_phi` enforcement.
 
 ## Top-Level Fields
 
@@ -86,3 +88,9 @@ services:
 ## Boundary
 
 The sample policy is synthetic. Do not treat it as a vendor compliance source of truth. Replace it with organization-approved facts before using the guard for real PHI workflows.
+
+Policy version 1 selects a service profile using exact `vendor` and `service`
+values plus `model_patterns`. It then evaluates PHI status, coverage and BAA
+flags, model denials, feature, logging, storage, and the production raw-logging
+rule. `ComplianceContext.endpoint`, `region`, and `purpose` are recorded for the
+caller but do not participate in profile selection or eligibility checks.

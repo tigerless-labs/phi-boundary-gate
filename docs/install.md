@@ -3,7 +3,7 @@
 This project is a Python package. Other projects should import it through normal
 package installation, not by copying source files.
 
-The examples below target v0.8.4.
+The examples below target v0.8.5.
 
 ## PyPI Install
 
@@ -76,7 +76,11 @@ from phi_boundary_gate import PhiBoundaryGate
 gate = PhiBoundaryGate.from_project()
 decision = gate.guard_model_input("member_id=MBR-SYN-8842")
 safe_log_text = gate.redact_for_log("debug member_id=MBR-SYN-8842")
-audit_payload = decision.to_safe_dict()
+audit_payload = {
+    "finding_count": len(decision.findings),
+    "categories": sorted({item.category for item in decision.findings}),
+    "should_block": decision.should_block,
+}
 ```
 
 Full trace audits can also stay in-process:
@@ -147,7 +151,7 @@ workflow and safety notes.
 Use this when developing this package beside another local project:
 
 ```bash
-python3 -m pip install -e /home/frank/code/phi-boundary-gate
+python3 -m pip install -e /path/to/phi-boundary-gate
 ```
 
 For package development, include developer tooling:
@@ -166,14 +170,14 @@ package index:
 
 ```bash
 python3 -m pip install \
-  "phi-boundary-gate @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.8.4"
+  "phi-boundary-gate @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.8.5"
 ```
 
 The NER extra works with the same fallback:
 
 ```bash
 python3 -m pip install \
-  "phi-boundary-gate[ner] @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.8.4"
+  "phi-boundary-gate[ner] @ git+ssh://git@github.com/tigerless-labs/phi-boundary-gate.git@v0.8.5"
 ```
 
 For short-term testing, a commit SHA is also valid:
@@ -200,8 +204,8 @@ Release publishing uses GitHub Actions and PyPI Trusted Publishing:
 5. Create and push the release tag:
 
 ```bash
-git tag -a v0.8.4 -m "v0.8.4: Coverage-Aware Exposure Diff"
-git push origin v0.8.4
+git tag -a v0.8.5 -m "v0.8.5: Cross-Project Integration"
+git push origin v0.8.5
 ```
 
 The tag workflow publishes the same built package shape to PyPI.

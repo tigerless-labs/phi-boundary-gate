@@ -5,7 +5,7 @@ source files or import private modules.
 
 ## Recommended Flow
 
-1. Install `phi-boundary-gate>=0.7,<0.8`.
+1. Install `phi-boundary-gate>=0.8,<0.9`.
 2. Run `phi-boundary-gate init` in the consuming project.
 3. Review `config/phi-policy.yml` and, if needed,
    `config/phi-compliance-policy.yml`.
@@ -74,3 +74,6 @@ fields.
   `AuditResult.to_markdown()` for human review.
 - Catch `PhiBoundaryGateError` for package validation failures and
   `TraceMappingError` for external trace conversion failures.
+
+See the [Integration Cookbook](integration-cookbook.md) for end-to-end Guard,
+Audit, Redact, and Compare recipes.

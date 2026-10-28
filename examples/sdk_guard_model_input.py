@@ -17,7 +17,16 @@ def main() -> int:
 
     gate = PhiBoundaryGate.from_policy_file(args.policy)
     decision = gate.guard_model_input("Summarize member_id=MBR-SYN-8842 for the next care step.")
-    print(json.dumps(decision.to_safe_dict(), sort_keys=True))
+    print(
+        json.dumps(
+            {
+                "finding_count": len(decision.findings),
+                "categories": sorted({finding.category for finding in decision.findings}),
+                "should_block": decision.should_block,
+            },
+            sort_keys=True,
+        )
+    )
     return 1 if decision.should_block else 0
 
 

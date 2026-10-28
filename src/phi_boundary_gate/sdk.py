@@ -193,6 +193,7 @@ class PhiBoundaryGate:
         context: ComplianceContext,
         *,
         compliance_policy: CompliancePolicy | None = None,
+        enforce_declared_phi: bool = False,
     ) -> ComplianceDecision:
         policy = compliance_policy or self.compliance_policy
         if policy is None:
@@ -208,6 +209,7 @@ class PhiBoundaryGate:
             context=context,
             enable_presidio=self.enable_presidio,
             semantic_resolver=self.semantic_resolver,
+            enforce_declared_phi=enforce_declared_phi,
         )
 
     def _policy_path(self) -> Path | str:

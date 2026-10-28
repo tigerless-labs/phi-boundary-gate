@@ -2,6 +2,7 @@
 
 - [Install and consume](install.md) - PyPI installation, local editable installs, Git tag fallback, and release publishing.
 - [Library API](library-api.md) - Embeddable scan, redact, guard, and project SDK APIs.
+- [Integration Cookbook](integration-cookbook.md) - End-to-end Audit, Guard, Redact, and Compare recipes for external projects.
 - [External integration](external-integration.md) - Recommended dependency, adapter, and audit flow for consuming projects.
 - [Direct external trace audit](direct-external-audit.md) - One-step CLI/SDK audit flow for mapped external agent traces.
 - [Migration to 0.6.0](migration-0.6.md) - Report schema v3 and audit SDK migration notes.

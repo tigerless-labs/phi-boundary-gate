@@ -19,6 +19,62 @@ Configure PyPI Trusted Publishing before the first release:
 
 Trusted Publishing avoids long-lived PyPI API tokens in GitHub Secrets.
 
+## v0.8.5
+
+Cross-Project Integration & Source-Aware Compliance ships as one backward-
+compatible feature PR. The declared-PHI option remains disabled by default and
+reuses Compliance Policy v1. Do not change Audit Report schema v3, Exposure Diff
+schema v1, Coverage Diff sidecars, Trace Mapping v1, CLI exit behavior, Required
+Checks, or the publish workflow triggers.
+
+Before requesting merge, run:
+
+```bash
+ruff check src tests examples .github/scripts
+PYTHONPATH="$PWD/src:$PWD" python3 -m unittest discover -s tests -v
+python3 -m unittest discover -s .github/scripts/tests -v
+PYTHONPATH="$PWD/src:$PWD" python3 -m compileall -q src tests examples .github/scripts
+python3 .github/scripts/check_release_version.py --base-ref origin/main
+PYTHONPATH=src python3 examples/integrations/provider_boundary_preflight.py
+PYTHONPATH=src python3 examples/integrations/rag_agent_trace_audit.py \
+  --out-dir /tmp/phi-v085-integration-audit
+PYTHONPATH=src python3 tools/trace_corpus_report.py \
+  --traces samples/traces \
+  --expectations samples/trace_expectations \
+  --policy samples/policies/default.yml \
+  --out /tmp/phi-v085-trace-corpus.json
+diff -u reports/trace-corpus-coverage.json /tmp/phi-v085-trace-corpus.json
+python3 -m build
+python3 -m twine check dist/*
+```
+
+Also run the existing CLI sample smoke and install the built wheel into a clean
+environment with no source-tree `PYTHONPATH`. From that environment, import the
+public SDK, confirm `__version__ == "0.8.5"`, and run both integration examples.
+
+Release sequence:
+
+1. Complete code and documentation review on the PR.
+2. Confirm all Required Checks pass.
+3. Merge the reviewed PR to `main`.
+4. Confirm the resulting `main` CI run succeeds.
+5. Confirm the automatic TestPyPI publication and clean installation validation succeed.
+6. Confirm the target version and `v0.8.5` tag do not conflict with TestPyPI, PyPI, repository tags, or GitHub Releases.
+7. Create and push the `v0.8.5` tag from the merged `main` commit only.
+8. Let the existing tag-triggered Trusted Publishing workflow publish to PyPI; do not upload manually.
+9. After PyPI publication succeeds, create GitHub Release `v0.8.5 — Cross-Project Integration & Source-Aware Compliance`.
+
+```bash
+git switch main
+git pull --ff-only origin main
+git tag -a v0.8.5 -m "v0.8.5: Cross-Project Integration"
+git push origin v0.8.5
+```
+
+Never tag the feature branch, merge without review, publish manually, or proceed
+past a failed Required Check, main CI run, TestPyPI validation, or required
+environment approval.
+
 ## v0.8.4
 
 Coverage-Aware Exposure Diff ships in one feature PR. Its JSON/Markdown output
